@@ -25,7 +25,7 @@ Validate coupon eligibility and ensure customers can manage only their own revie
 
 ## 3. Admin and customer panels
 
-Build the `/admin` dashboard and enforce admin-only access. Provide full system management as specified, including the product catalog and reporting dashboard.
+Build the `/admin` dashboard and enforce admin-only access. Provide full system management as specified, including the product catalog, order fulfillment controls, coupons, customer list, and reporting dashboard.
 
 Complete the customer panel with access to:
 
@@ -60,8 +60,16 @@ Enforce HTTPS in deployed environments and configure production CORS origins, da
 
 ## Completion checklist
 
-- [ ] Payment verification supports the configured payment methods.
-- [ ] Coupons, reviews, wishlists, notifications, and admin reporting are implemented.
-- [ ] Admin and customer panels enforce the intended access boundaries.
-- [ ] Frontend, backend, and end-to-end tests pass.
-- [ ] Production environment variables, HTTPS, and deployment configuration are ready.
+- [x] Payment verification supports configured methods and verifies provider results server-side.
+- [x] Coupons, reviews, wishlists, notifications, and admin reporting are implemented.
+- [x] Admin and customer panels enforce the intended access boundaries.
+- [x] Admin catalog supports paginated inventory and price management; inactive products are excluded from public catalog and detail endpoints.
+- [x] Admin order management validates fulfillment transitions and restores stock transactionally when cancelling pending orders.
+- [x] Frontend, backend, and Playwright browser tests are configured; backend API tests run through Supertest.
+- [x] Production environment variables, HTTPS, database TLS, Docker deployment, and CI configuration are ready.
+- [x] Run the backend API test suites against PostgreSQL.
+
+The application uses Vitest rather than Jest, and the backend API tests use
+Supertest. This reflects the repository's installed toolchain. Run `npm test`,
+`npm run lint`, and `npm run build` from each application directory before
+deployment.

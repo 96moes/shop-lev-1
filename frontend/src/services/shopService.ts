@@ -3,10 +3,15 @@ import type {
   Coupon,
   CouponValidation,
   DashboardStats,
+  Order,
+  OrderStatus,
+  Paginated,
   Payment,
   PaymentMethod,
   PaymentResult,
   ProductReviews,
+  Product,
+  ProductQuery,
   Review,
   User,
   WishlistItem,
@@ -155,6 +160,28 @@ export const adminService = {
 
   async customers(): Promise<User[]> {
     const { data } = await apiClient.get<User[]>('/admin/customers')
+    return data
+  },
+
+  async orders(): Promise<Order[]> {
+    const { data } = await apiClient.get<Order[]>('/admin/orders')
+    return data
+  },
+
+  async products(query: ProductQuery = {}): Promise<Paginated<Product>> {
+    const { data } = await apiClient.get<Paginated<Product>>('/admin/products', {
+      params: query,
+    })
+    return data
+  },
+
+  async updateOrderStatus(
+    id: string,
+    status: Extract<OrderStatus, 'processing' | 'shipped' | 'delivered' | 'cancelled'>,
+  ): Promise<Order> {
+    const { data } = await apiClient.patch<Order>(`/admin/orders/${id}/status`, {
+      status,
+    })
     return data
   },
 

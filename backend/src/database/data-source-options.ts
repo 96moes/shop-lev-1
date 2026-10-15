@@ -59,8 +59,13 @@ type PostgresOptions = Extract<DataSourceOptions, { type: 'postgres' }>;
  * development database. Credentials are never hard-coded here.
  */
 function buildConnectionOptions(env: NodeJS.ProcessEnv): PostgresOptions {
+  const ssl =
+    env.DB_SSL === 'true'
+      ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+      : undefined;
+
   if (env.DATABASE_URL) {
-    return { type: 'postgres', url: env.DATABASE_URL };
+    return { type: 'postgres', url: env.DATABASE_URL, ssl };
   }
 
   return {
@@ -70,6 +75,7 @@ function buildConnectionOptions(env: NodeJS.ProcessEnv): PostgresOptions {
     username: env.DB_USERNAME ?? 'postgres',
     password: env.DB_PASSWORD ?? '',
     database: env.DB_DATABASE ?? 'shop',
+    ssl,
   };
 }
 

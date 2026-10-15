@@ -7,7 +7,7 @@ A full-stack e-commerce platform: a React single-page application backed by a Ne
 | Layer     | Technology                                                              |
 | --------- | ----------------------------------------------------------------------- |
 | Frontend  | React, Vite, React Router, TypeScript, Tailwind CSS, Axios, TanStack Query |
-| Backend   | NestJS, TypeScript, Prisma ORM, JWT authentication, Swagger (OpenAPI)   |
+| Backend   | NestJS, TypeScript, TypeORM, JWT authentication, Swagger (OpenAPI)      |
 | Database  | PostgreSQL                                                              |
 
 ## Project Structure
@@ -26,11 +26,12 @@ project/
 ├── backend/           # NestJS REST API
 │   ├── src/
 │   │   ├── modules/   # auth, users, products, categories, cart, orders, payments
+│   │   ├── database/
+│   │   │   ├── entities/
+│   │   │   └── migrations/
 │   │   ├── common/
 │   │   ├── app.module.ts
 │   │   └── main.ts
-│   └── prisma/
-│       └── schema.prisma
 │
 └── README.md
 ```
@@ -54,18 +55,21 @@ React + Vite + Router --> (Auth, Products, Orders) --> Database
 
 ```
 cd backend
-npm install
-npx prisma migrate dev
+npm ci
+cp .env.example .env
+# Set PostgreSQL credentials and strong JWT secrets in .env.
+npm run migration:run
 npm run start:dev
 ```
 
-The API listens on `http://localhost:3000`.
+The API listens on `http://localhost:3000`. TypeORM migrations are the source
+of truth for the schema; automatic schema synchronization is disabled.
 
 ### Frontend
 
 ```
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -87,6 +91,12 @@ JWT_SECRET=your_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 PORT=3000
 ```
+
+Payment credentials are optional and belong only in backend environment
+variables. Stripe or PayPal verification returns an explicit unavailable error
+when the corresponding provider is not configured; it never trusts a client
+payment status. Set `DB_SSL=true` for managed PostgreSQL connections that
+require TLS. `DATABASE_URL`, when used, takes precedence over the `DB_*` values.
 
 ## Database Schema
 
@@ -121,7 +131,7 @@ Main tables: `users`, `products`, `categories`, `product_images`, `carts`, `orde
 | Reviews       | `GET /api/products/:productId/reviews`, `POST /api/products/:productId/reviews`, `GET /api/reviews/mine`, `PATCH /api/reviews/:id`, `DELETE /api/reviews/:id`, `PATCH /api/reviews/:id/approval` *(admin)* |
 | Wishlist      | `GET /api/wishlist`, `POST /api/wishlist`, `DELETE /api/wishlist/product/:productId`, `DELETE /api/wishlist/:id` |
 | Notifications | `GET /api/notifications`, `PATCH /api/notifications/:id/read`, `POST /api/notifications/read-all` |
-| Admin         | `GET /api/admin/stats`, `GET /api/admin/customers`                                 |
+| Admin         | `GET /api/admin/stats`, `GET /api/admin/customers`, `GET /api/admin/products`, `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status` |
 | Health        | `GET /health` (no `/api` prefix)                                                  |
 
 ## Security
@@ -185,15 +195,19 @@ the Vite toolchain the frontend already uses).
 | Frontend unit     | Vitest, React Testing Library, jsdom   | `npm test` (frontend) |
 | Backend unit      | Vitest                                 | `npm test` (backend)  |
 | Backend API / e2e | Vitest, Supertest, real PostgreSQL     | `npm run test:e2e` (backend) |
-| End-to-end        | Playwright (browser)                   | see note below        |
+| Browser end-to-end | Playwright (Chromium)                  | `npm run test:e2e` (frontend) |
 
 The backend e2e suites create their schema by running the migrations, so they
 also verify that migrations apply cleanly. They need a reachable PostgreSQL and
-clean up the rows they create.
+clean up the rows they create. The admin order workflow permits only pending
+order cancellation and forward fulfillment transitions (paid → processing →
+shipped → delivered); it does not mark unpaid orders paid or claim to issue
+refunds.
 
-> **Note on Playwright:** its browser CDN is unavailable in some regions. The
-> end-to-end checks in this project were run against the locally installed
-> Chrome (`channel: 'chrome'`) via `playwright-core`.
+The CI workflow runs backend API tests against PostgreSQL, frontend unit tests,
+and Playwright Chromium browser tests for public/customer/admin route access.
+For a local browser run, install Chromium once with `npx playwright install chromium`,
+then run `npm run test:e2e` from `frontend`.
 
 ## Deployment
 
@@ -206,12 +220,21 @@ clean up the rows they create.
 
 ### Production configuration
 
-Copy `backend/.env.production.example` and supply values through the platform's
-secret store — never commit them:
+Use `backend/.env.production.example` as a checklist and set values through the
+deployment platform's secret store — never commit production credentials:
 
-- `DATABASE_URL` (or the `DB_*` variables) for the managed database.
+- `DATABASE_URL` (or the `DB_*` variables) for the managed database. Enable
+  `DB_SSL=true` when required; certificate validation remains enabled by default.
 - `JWT_SECRET` and `JWT_REFRESH_SECRET` — generate each with `openssl rand -base64 48`.
 - `FRONTEND_ORIGIN` — the exact production origin(s); a wildcard is not used.
+- `STRIPE_SECRET_KEY` and/or PayPal credentials only for the payment methods
+  enabled in the storefront.
+
+Build the frontend with its public API URL in `VITE_API_URL`. For the Docker
+Compose deployment, the Nginx proxy provides a same-origin `/api` route by
+default. The backend container applies pending TypeORM migrations before
+starting. For other hosting targets, apply `npm run migration:run` as a release
+step before sending traffic to the new application version.
 
 ### HTTPS
 

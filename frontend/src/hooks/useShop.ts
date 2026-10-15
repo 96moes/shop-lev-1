@@ -11,7 +11,13 @@ import {
   reviewService,
   wishlistService,
 } from '../services/shopService'
-import type { Cart, PaymentMethod, ProductQuery } from '../types/api'
+import type {
+  Cart,
+  Coupon,
+  OrderStatus,
+  PaymentMethod,
+  ProductQuery,
+} from '../types/api'
 
 export const queryKeys = {
   products: (query: ProductQuery) => ['products', query] as const,
@@ -25,6 +31,7 @@ export const queryKeys = {
   notifications: ['notifications'] as const,
   adminStats: ['admin', 'stats'] as const,
   adminCustomers: ['admin', 'customers'] as const,
+  adminOrders: ['admin', 'orders'] as const,
   adminCoupons: ['admin', 'coupons'] as const,
 }
 
@@ -261,12 +268,50 @@ export function useAdminCoupons(enabled: boolean) {
   })
 }
 
+export function useAdminOrders(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.adminOrders,
+    queryFn: () => adminService.orders(),
+    enabled,
+  })
+}
+
+export function useAdminProducts(query: ProductQuery, enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'products', query],
+    queryFn: () => adminService.products(query),
+    enabled,
+  })
+}
+
+export function useAdminOrderMutations() {
+  const queryClient = useQueryClient()
+  const updateStatus = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string
+      status: Extract<OrderStatus, 'processing' | 'shipped' | 'delivered' | 'cancelled'>
+    }) => adminService.updateOrderStatus(id, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminOrders })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminStats })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orders })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications })
+    },
+  })
+
+  return { updateStatus }
+}
+
 /** Admin catalog mutations; all invalidate the product lists and stats. */
 export function useAdminProductMutations() {
   const queryClient = useQueryClient()
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['products'] })
     void queryClient.invalidateQueries({ queryKey: ['product'] })
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
     void queryClient.invalidateQueries({ queryKey: queryKeys.adminStats })
   }
 
@@ -287,7 +332,12 @@ export function useAdminCouponMutations() {
     queryClient.invalidateQueries({ queryKey: queryKeys.adminCoupons })
 
   const create = useMutation({ mutationFn: couponService.create, onSuccess: invalidate })
+  const update = useMutation({
+    mutationFn: ({ id, ...input }: { id: string } & Partial<Coupon>) =>
+      couponService.update(id, input),
+    onSuccess: invalidate,
+  })
   const remove = useMutation({ mutationFn: couponService.remove, onSuccess: invalidate })
 
-  return { create, remove }
+  return { create, update, remove }
 }

@@ -8,6 +8,7 @@ import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/common/configure-app.js';
 import { Category } from '../src/database/entities/category.entity.js';
 import { Coupon, DiscountType } from '../src/database/entities/coupon.entity.js';
+import { Order } from '../src/database/entities/order.entity.js';
 import { Product } from '../src/database/entities/product.entity.js';
 import { User, UserRole } from '../src/database/entities/user.entity.js';
 
@@ -615,6 +616,30 @@ describe('Admin, payments and release features (e2e)', () => {
       }
     });
 
+    it('lets an admin cancel a pending order and restores its stock', async () => {
+      const stockBeforeCancellation = await dataSource
+        .getRepository(Product)
+        .findOneByOrFail({ id: productId });
+      const orderBeforeCancellation = await dataSource
+        .getRepository(Order)
+        .findOneOrFail({ where: { id: orderId }, relations: { items: true } });
+      const orderedQuantity = orderBeforeCancellation.items
+        .filter((item) => item.productId === productId)
+        .reduce((quantity, item) => quantity + item.quantity, 0);
+
+      const response = await request(server)
+        .patch(`/api/admin/orders/${orderId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'cancelled' })
+        .expect(200);
+
+      expect(response.body.status).toBe('cancelled');
+      const product = await dataSource
+        .getRepository(Product)
+        .findOneByOrFail({ id: productId });
+      expect(product.stock).toBe(stockBeforeCancellation.stock + orderedQuantity);
+    });
+
     it('hides the payments of another customer', async () => {
       await request(server)
         .get(`/api/payments/order/${orderId}`)
@@ -679,6 +704,53 @@ describe('Admin, payments and release features (e2e)', () => {
       expect(response.body.some((u: { email: string }) => u.email === customerEmail)).toBe(true);
       // Password hashes must never be serialised.
       expect(response.body.every((u: { password?: string }) => u.password === undefined)).toBe(true);
+    });
+
+    it('hides inactive products publicly while keeping them in the admin catalog', async () => {
+      const product = await dataSource
+        .getRepository(Product)
+        .findOneByOrFail({ id: productId });
+      await dataSource.getRepository(Product).update(productId, { isActive: false });
+
+      try {
+        await request(server).get(`/api/products/${productId}`).expect(404);
+
+        const listed = await request(server)
+          .get('/api/admin/products')
+          .query({ search: product.name })
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+        expect(listed.body.items.some((item: { id: string }) => item.id === productId)).toBe(
+          true,
+        );
+      } finally {
+        await dataSource.getRepository(Product).update(productId, { isActive: true });
+      }
+    });
+
+    it('restricts order management to admins and validates allowed statuses', async () => {
+      await request(server)
+        .get('/api/admin/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .expect(403);
+
+      const listed = await request(server)
+        .get('/api/admin/orders')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(Array.isArray(listed.body)).toBe(true);
+
+      await request(server)
+        .patch(`/api/admin/orders/${randomUUID()}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'paid' })
+        .expect(400);
+
+      await request(server)
+        .patch(`/api/admin/orders/${randomUUID()}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'cancelled' })
+        .expect(404);
     });
   });
 

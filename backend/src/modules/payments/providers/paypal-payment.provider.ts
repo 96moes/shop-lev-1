@@ -6,6 +6,24 @@ import type {
   VerifyPaymentOutcome,
 } from './payment-provider.interface.js';
 
+interface PaypalCapture {
+  status?: string;
+  amount?: {
+    value?: string;
+    currency_code?: string;
+  };
+}
+
+interface PaypalCaptureResponse {
+  [key: string]: unknown;
+  status?: string;
+  purchase_units?: {
+    payments?: {
+      captures?: PaypalCapture[];
+    };
+  }[];
+}
+
 /**
  * Verifies PayPal payments by capturing the order server-side.
  *
@@ -76,7 +94,7 @@ export class PaypalPaymentProvider implements PaymentProvider {
       },
     );
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = (await response.json()) as PaypalCaptureResponse;
 
     if (!response.ok) {
       this.logger.warn(`PayPal capture failed (${response.status})`);
@@ -94,6 +112,55 @@ export class PaypalPaymentProvider implements PaymentProvider {
         transactionId: input.transactionId,
         payload: body,
         failureReason: `PayPal reports the order as "${String(body.status)}"`,
+      };
+    }
+
+    const captures =
+      body.purchase_units?.flatMap(
+        (unit) => unit.payments?.captures ?? [],
+      ) ?? [];
+    const completedCaptures = captures.filter(
+      (capture) => capture.status === 'COMPLETED',
+    );
+    if (completedCaptures.length === 0) {
+      return {
+        status: PaymentStatus.FAILED,
+        transactionId: input.transactionId,
+        payload: body,
+        failureReason: 'PayPal did not return a completed capture',
+      };
+    }
+
+    let capturedMinorUnits = 0;
+    for (const capture of completedCaptures) {
+      const value = capture.amount?.value;
+      const currency = capture.amount?.currency_code;
+      if (!value || !/^\d+(?:\.\d{1,2})?$/.test(value)) {
+        return {
+          status: PaymentStatus.FAILED,
+          transactionId: input.transactionId,
+          payload: body,
+          failureReason: 'PayPal returned an invalid capture amount',
+        };
+      }
+      if (currency?.toLowerCase() !== input.currency.toLowerCase()) {
+        return {
+          status: PaymentStatus.FAILED,
+          transactionId: input.transactionId,
+          payload: body,
+          failureReason: 'Payment currency does not match the order',
+        };
+      }
+      capturedMinorUnits += Math.round(Number(value) * 100);
+    }
+
+    const expectedMinorUnits = Math.round(Number(input.amount) * 100);
+    if (capturedMinorUnits !== expectedMinorUnits) {
+      return {
+        status: PaymentStatus.FAILED,
+        transactionId: input.transactionId,
+        payload: body,
+        failureReason: `Paid amount (${capturedMinorUnits}) does not match the order total (${expectedMinorUnits})`,
       };
     }
 

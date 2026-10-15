@@ -1,11 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Order, OrderStatus } from '../../database/entities/order.entity.js';
 import { OrderItem } from '../../database/entities/order-item.entity.js';
+import { NotificationType } from '../../database/entities/notification.entity.js';
 import { Product } from '../../database/entities/product.entity.js';
 import { User, UserRole } from '../../database/entities/user.entity.js';
 import { PUBLIC_USER_SELECT } from '../../common/public-select.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { ProductsService, type PaginatedProducts } from '../products/products.service.js';
+import type { QueryProductsDto } from '../products/dto/query-products.dto.js';
+import type { UpdateAdminOrderStatusDto } from './dto/update-admin-order-status.dto.js';
 import type { DashboardStatsDto } from './dto/dashboard-stats.dto.js';
 
 /** Below this stock level a product is surfaced as needing attention. */
@@ -30,8 +39,11 @@ export class AdminService {
     private readonly orderItemsRepository: Repository<OrderItem>,
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+    private readonly productsService: ProductsService,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly dataSource: DataSource,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getDashboardStats(): Promise<DashboardStatsDto> {
@@ -55,13 +67,11 @@ export class AdminService {
       this.lowStock(),
     ]);
 
-    const { totalRevenue, totalOrders } = orderTotals;
-
+    const { totalRevenue, totalOrders, paidOrders } = orderTotals;
     return {
       totalRevenue,
       totalOrders,
-      averageOrderValue:
-        totalOrders > 0 ? round2(totalRevenue / totalOrders) : 0,
+      averageOrderValue: paidOrders > 0 ? round2(totalRevenue / paidOrders) : 0,
       totalCustomers,
       totalProducts,
       pendingOrders,
@@ -79,24 +89,35 @@ export class AdminService {
   private async orderTotals(): Promise<{
     totalRevenue: number;
     totalOrders: number;
+    paidOrders: number;
   }> {
+    const paidStatuses = [
+      OrderStatus.PAID,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+    ];
     const row = await this.ordersRepository
       .createQueryBuilder('order')
       .select('COUNT(*)', 'totalOrders')
       .addSelect(
+        `COUNT(*) FILTER (WHERE "order"."status" IN (:...paid))`,
+        'paidOrders',
+      )
+      .addSelect(
         `COALESCE(SUM(CASE WHEN "order"."status" IN (:...paid) THEN "order"."total" ELSE 0 END), 0)`,
         'totalRevenue',
       )
-      .setParameter('paid', [
-        OrderStatus.PAID,
-        OrderStatus.PROCESSING,
-        OrderStatus.SHIPPED,
-        OrderStatus.DELIVERED,
-      ])
-      .getRawOne<{ totalOrders: string; totalRevenue: string }>();
+      .setParameter('paid', paidStatuses)
+      .getRawOne<{
+        totalOrders: string;
+        paidOrders: string;
+        totalRevenue: string;
+      }>();
 
     return {
       totalOrders: Number(row?.totalOrders ?? 0),
+      paidOrders: Number(row?.paidOrders ?? 0),
       totalRevenue: round2(Number(row?.totalRevenue ?? 0)),
     };
   }
@@ -167,7 +188,16 @@ export class AdminService {
       .createQueryBuilder('order')
       .select(`TO_CHAR("order"."createdAt", 'YYYY-MM-DD')`, 'date')
       .addSelect('COUNT(*)', 'orders')
-      .addSelect('COALESCE(SUM("order"."total"), 0)', 'revenue')
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN "order"."status" IN (:...paid) THEN "order"."total" ELSE 0 END), 0)`,
+        'revenue',
+      )
+      .setParameter('paid', [
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+      ])
       .where('"order"."createdAt" >= :since', { since })
       .groupBy(`TO_CHAR("order"."createdAt", 'YYYY-MM-DD')`)
       .getRawMany<{ date: string; orders: string; revenue: string }>();
@@ -227,5 +257,77 @@ export class AdminService {
       order: { createdAt: 'DESC' },
       take: 100,
     });
+  }
+
+  listOrders(): Promise<Order[]> {
+    return this.ordersRepository.find({
+      relations: { items: true },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+  }
+
+  listProducts(query: QueryProductsDto): Promise<PaginatedProducts> {
+    return this.productsService.findAll(query, true);
+  }
+
+  async updateOrderStatus(
+    orderId: string,
+    dto: UpdateAdminOrderStatusDto,
+  ): Promise<Order> {
+    const order = await this.dataSource.transaction(async (manager) => {
+      const current = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!current) {
+        throw new NotFoundException('Order not found');
+      }
+      current.items = await manager.find(OrderItem, {
+        where: { orderId: current.id },
+      });
+
+      const allowedTransition =
+        (current.status === OrderStatus.PENDING &&
+          dto.status === OrderStatus.CANCELLED) ||
+        (current.status === OrderStatus.PAID &&
+          dto.status === OrderStatus.PROCESSING) ||
+        (current.status === OrderStatus.PROCESSING &&
+          dto.status === OrderStatus.SHIPPED) ||
+        (current.status === OrderStatus.SHIPPED &&
+          dto.status === OrderStatus.DELIVERED);
+      if (!allowedTransition) {
+        throw new ConflictException(
+          `Cannot change order status from "${current.status}" to "${dto.status}"`,
+        );
+      }
+
+      if (dto.status === OrderStatus.CANCELLED) {
+        for (const item of current.items) {
+          if (item.productId) {
+            await manager
+              .createQueryBuilder()
+              .update(Product)
+              .set({ stock: () => `"stock" + ${item.quantity}` })
+              .where('id = :productId', { productId: item.productId })
+              .execute();
+          }
+        }
+      }
+
+      current.status = dto.status;
+      return manager.save(current);
+    });
+
+    await this.notifications.create({
+      userId: order.userId,
+      type: NotificationType.ORDER,
+      title: 'Order status updated',
+      message: `Your order ${order.orderNumber} is now ${dto.status}.`,
+      link: `/orders/${order.id}`,
+      data: { orderId: order.id, status: dto.status },
+    });
+
+    return order;
   }
 }

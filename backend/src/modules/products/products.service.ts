@@ -40,7 +40,10 @@ export class ProductsService {
   ) {}
 
   /** Search + filter + paginate the public catalog. */
-  async findAll(query: QueryProductsDto): Promise<PaginatedProducts> {
+  async findAll(
+    query: QueryProductsDto,
+    includeInactive = false,
+  ): Promise<PaginatedProducts> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 12;
 
@@ -48,6 +51,10 @@ export class ProductsService {
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.images', 'images');
+
+    if (!includeInactive) {
+      qb.andWhere('product.isActive = true');
+    }
 
     if (query.search) {
       qb.andWhere(
@@ -82,12 +89,12 @@ export class ProductsService {
     };
   }
 
-  async findById(id: string): Promise<Product> {
+  async findById(id: string, includeInactive = false): Promise<Product> {
     const product = await this.productsRepository.findOne({
       where: { id },
       relations: { category: true, images: true },
     });
-    if (!product) {
+    if (!product || (!includeInactive && !product.isActive)) {
       throw new NotFoundException('Product not found');
     }
     return product;
@@ -114,11 +121,11 @@ export class ProductsService {
     });
 
     const saved = await this.productsRepository.save(product);
-    return this.findById(saved.id);
+    return this.findById(saved.id, true);
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<Product> {
-    const product = await this.findById(id);
+    const product = await this.findById(id, true);
 
     if (dto.slug !== undefined || dto.name !== undefined) {
       const slug = slugify(dto.slug ?? dto.name ?? product.name);
@@ -148,11 +155,11 @@ export class ProductsService {
     }
 
     await this.productsRepository.save(product);
-    return this.findById(id);
+    return this.findById(id, true);
   }
 
   async remove(id: string): Promise<void> {
-    const product = await this.findById(id);
+    const product = await this.findById(id, true);
     await this.productsRepository.remove(product);
   }
 
