@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/*
+ * Application base styles.
+ *
+ * Deliberately minimal: the Vite demo styles that previously lived here set a
+ * root font-size of 18px (making Tailwind's rem-based spacing render ~12.5%
+ * larger than documented) and defined a parallel set of colour variables that
+ * competed with Tailwind's theme. Both are gone — all styling now comes from
+ * Tailwind utilities so spacing and colour stay consistent.
+ */
+
+html {
+  /* Use the browser default (16px) as the rem baseline. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}

@@ -1,0 +1,13 @@
+# Root-level ignores.
+
+# Docker Compose environment — holds real credentials, never commit it.
+.env.docker
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+# Local tooling
+*.log
+.DS_Store
+Thumbs.db

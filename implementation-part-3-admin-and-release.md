@@ -10,12 +10,6 @@ Implement the payment verification endpoint:
 POST /api/payments/verify
 ```
 
-Support the payment methods specified for the project:
-
-- Stripe
-- PayPal
-- Cash on Delivery (COD)
-
 Record payment transactions in the `payments` table. Keep payment secrets in backend environment variables and verify payment results on the server.
 
 ## 2. Coupons and additional customer features
