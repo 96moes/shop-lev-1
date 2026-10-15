@@ -29,11 +29,11 @@ export default function RegisterPage() {
     setError(null)
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match')
+      setError('گذرواژه و تکرار آن یکسان نیستند')
       return
     }
     if (form.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError('گذرواژه باید دست‌کم ۸ نویسه باشد')
       return
     }
 
@@ -54,15 +54,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-6">
-      <h1 className="text-xl font-semibold text-slate-900">Create your account</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        It only takes a moment to get started.
+    <div className="mx-auto max-w-md rounded-lg border border-brand-100 bg-white p-6">
+      <h1 className="text-xl font-semibold text-brand-800">ساخت حساب کاربری</h1>
+      <p className="mt-1 text-sm text-brand-700">
+        در چند لحظه ثبت‌نام کنید و خرید را شروع کنید.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="First name" htmlFor="firstName">
+          <Field label="نام" htmlFor="firstName">
             <input
               id="firstName"
               required
@@ -72,7 +72,7 @@ export default function RegisterPage() {
             />
           </Field>
 
-          <Field label="Last name" htmlFor="lastName">
+          <Field label="نام خانوادگی" htmlFor="lastName">
             <input
               id="lastName"
               required
@@ -83,7 +83,7 @@ export default function RegisterPage() {
           </Field>
         </div>
 
-        <Field label="Email" htmlFor="email">
+        <Field label="ایمیل" htmlFor="email">
           <input
             id="email"
             type="email"
@@ -95,7 +95,7 @@ export default function RegisterPage() {
           />
         </Field>
 
-        <Field label="Password" htmlFor="password" hint="At least 8 characters.">
+        <Field label="گذرواژه" htmlFor="password" hint="دست‌کم ۸ نویسه.">
           <input
             id="password"
             type="password"
@@ -107,7 +107,7 @@ export default function RegisterPage() {
           />
         </Field>
 
-        <Field label="Confirm password" htmlFor="confirmPassword">
+        <Field label="تکرار گذرواژه" htmlFor="confirmPassword">
           <input
             id="confirmPassword"
             type="password"
@@ -126,14 +126,14 @@ export default function RegisterPage() {
         )}
 
         <Button type="submit" fullWidth disabled={submitting}>
-          {submitting ? 'Creating account…' : 'Create account'}
+          {submitting ? 'در حال ساخت حساب…' : 'ساخت حساب'}
         </Button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-600">
-        Already registered?{' '}
-        <Link to="/login" className="font-medium text-slate-900 hover:underline">
-          Sign in
+      <p className="mt-4 text-sm text-brand-700">
+        قبلاً ثبت‌نام کرده‌اید؟{' '}
+        <Link to="/login" className="font-medium text-brand-800 hover:underline">
+          وارد شوید
         </Link>
       </p>
     </div>

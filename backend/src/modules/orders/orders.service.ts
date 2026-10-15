@@ -15,6 +15,7 @@ import { OrderItem } from '../../database/entities/order-item.entity.js';
 import { Product } from '../../database/entities/product.entity.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { CouponsService } from '../coupons/coupons.service.js';
+import { formatMoney } from '../../common/currency.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 
 /** Flat shipping fee applied to every order. */
@@ -55,7 +56,7 @@ export class OrdersService {
     });
 
     if (!cart) {
-      throw new BadRequestException('Your cart is empty');
+      throw new BadRequestException('سبد خرید شما خالی است');
     }
 
     const orderId = await this.dataSource.transaction(async (manager) => {
@@ -66,7 +67,7 @@ export class OrdersService {
       });
 
       if (items.length === 0) {
-        throw new BadRequestException('Your cart is empty');
+        throw new BadRequestException('سبد خرید شما خالی است');
       }
 
       // Re-validate stock and price at checkout time.
@@ -74,12 +75,12 @@ export class OrdersService {
       for (const item of items) {
         if (!item.product || !item.product.isActive) {
           throw new BadRequestException(
-            'A product in your cart is no longer available',
+            'یکی از محصولات سبد خرید شما دیگر در دسترس نیست',
           );
         }
         if (item.product.stock < item.quantity) {
           throw new BadRequestException(
-            `Only ${item.product.stock} item(s) of "${item.product.name}" are in stock`,
+            `تنها ${item.product.stock} عدد از «${item.product.name}» موجود است`,
           );
         }
         subtotal += Number(item.product.price) * item.quantity;
@@ -143,7 +144,7 @@ export class OrdersService {
 
         if (result.affected !== 1) {
           throw new BadRequestException(
-            `"${item.product.name}" sold out while you were checking out`,
+            `«${item.product.name}» هنگام تکمیل خرید ناموجود شد`,
           );
         }
       }
@@ -170,8 +171,8 @@ export class OrdersService {
     await this.notifications.create({
       userId,
       type: NotificationType.ORDER,
-      title: 'Order placed',
-      message: `Your order ${order.orderNumber} has been placed. Total $${Number(order.total).toFixed(2)}.`,
+      title: 'سفارش ثبت شد',
+      message: `سفارش ${order.orderNumber} شما ثبت شد. مبلغ کل: ${formatMoney(order.total)}`,
       link: `/orders/${order.id}`,
       data: { orderId: order.id, orderNumber: order.orderNumber },
     });
@@ -199,7 +200,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('سفارش یافت نشد');
     }
     return order;
   }
@@ -226,7 +227,7 @@ export class OrdersService {
     );
 
     if (!result.valid || !result.coupon) {
-      throw new BadRequestException(result.reason ?? 'This coupon code is not valid');
+      throw new BadRequestException(result.reason ?? 'این کد تخفیف معتبر نیست');
     }
 
     return { discount: result.discount, couponId: result.coupon.id };

@@ -35,14 +35,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-6">
-      <h1 className="text-xl font-semibold text-slate-900">Sign in</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Welcome back. Enter your details to continue.
+    <div className="mx-auto max-w-md rounded-lg border border-brand-100 bg-white p-6">
+      <h1 className="text-xl font-semibold text-brand-800">ورود به حساب</h1>
+      <p className="mt-1 text-sm text-brand-700">
+        خوش آمدید. برای ادامه، اطلاعات حساب خود را وارد کنید.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        <Field label="Email" htmlFor="email">
+        <Field label="ایمیل" htmlFor="email">
           <input
             id="email"
             type="email"
@@ -54,7 +54,7 @@ export default function LoginPage() {
           />
         </Field>
 
-        <Field label="Password" htmlFor="password">
+        <Field label="گذرواژه" htmlFor="password">
           <input
             id="password"
             type="password"
@@ -73,14 +73,14 @@ export default function LoginPage() {
         )}
 
         <Button type="submit" fullWidth disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {submitting ? 'در حال ورود…' : 'ورود'}
         </Button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-600">
-        No account yet?{' '}
-        <Link to="/register" className="font-medium text-slate-900 hover:underline">
-          Create one
+      <p className="mt-4 text-sm text-brand-700">
+        هنوز حساب کاربری ندارید؟{' '}
+        <Link to="/register" className="font-medium text-brand-800 hover:underline">
+          ثبت‌نام کنید
         </Link>
       </p>
     </div>

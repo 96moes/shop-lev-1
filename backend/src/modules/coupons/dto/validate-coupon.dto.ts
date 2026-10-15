@@ -5,14 +5,14 @@ import { IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 /** Checks whether a coupon applies to a prospective order total. */
 export class ValidateCouponDto {
   @ApiProperty({ example: 'WELCOME10' })
-  @IsString()
-  @MaxLength(50)
+  @IsString({ message: 'کد تخفیف باید متن باشد' })
+  @MaxLength(50, { message: 'کد تخفیف بلندتر از حد مجاز است' })
   code: string;
 
   @ApiProperty({ description: 'Order subtotal to evaluate against.', example: 120 })
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'جمع سفارش باید یک عدد باشد' })
+  @Min(0, { message: 'جمع سفارش کمتر از حد مجاز است' })
   subtotal: number;
 
   @ApiPropertyOptional({ description: 'Ignored; reserved for future rules.' })

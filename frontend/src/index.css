@@ -1,14 +1,43 @@
 @import 'tailwindcss';
 
 /*
- * Application base styles.
+ * Persian web font.
  *
- * Deliberately minimal: the Vite demo styles that previously lived here set a
- * root font-size of 18px (making Tailwind's rem-based spacing render ~12.5%
- * larger than documented) and defined a parallel set of colour variables that
- * competed with Tailwind's theme. Both are gone — all styling now comes from
- * Tailwind utilities so spacing and colour stay consistent.
+ * Loaded from a CDN so Persian text renders with proper letterforms instead of
+ * falling back to a Latin face. The font stack in `@theme` still lists local
+ * Persian fonts first, so the storefront looks right offline too.
  */
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+
+/*
+ * Application theme.
+ *
+ * The brand colour is a royal green. Rather than repeating hex values in every
+ * component, the palette is declared once here as theme tokens so
+ * `bg-brand-700`, `text-brand-900` and friends are available everywhere.
+ */
+
+@theme {
+  /* Royal green: the primary brand ramp. */
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-200: #a7f3d0;
+  --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;
+  --color-brand-700: #047857;
+  --color-brand-800: #065f46;
+  --color-brand-900: #064e3b;
+
+  /*
+   * Persian-first font stack. `Vazirmatn` is the preferred web font when the
+   * host has it; otherwise the platform's Persian faces take over.
+   */
+  --font-sans:
+    Vazirmatn, 'Vazir', 'IRANSans', 'Sahel', 'Segoe UI', Tahoma, 'Noto Naskh Arabic',
+    'Iranian Sans', system-ui, -apple-system, Roboto, sans-serif;
+}
 
 html {
   /* Use the browser default (16px) as the rem baseline. */
@@ -17,10 +46,28 @@ html {
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-sans);
+}
+
+/*
+ * Persian text sits on the baseline of a taller script, so give it a little
+ * more room than the default line-height would allow.
+ */
+body {
+  line-height: 1.75;
+}
+
+/* Numeric inputs read left-to-right even when the page direction is RTL. */
+input[type='number'],
+input[type='email'],
+input[type='tel'],
+input[type='url'] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* Keep the focus ring on-brand across every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
 }

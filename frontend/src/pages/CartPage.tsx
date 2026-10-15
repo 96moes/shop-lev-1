@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Button from '../components/Button'
 import { useCart, useRemoveCartItem, useUpdateCartItem } from '../hooks/useShop'
-import { formatPrice } from '../lib/format'
+import { formatNumber, formatPriceWithUnit } from '../lib/format'
 import { getErrorMessage } from '../services/apiClient'
 
 export default function CartPage() {
@@ -12,27 +12,27 @@ export default function CartPage() {
   const mutationError = updateItem.error ?? removeItem.error
 
   if (isLoading) {
-    return <p className="text-sm text-slate-500">Loading your cart…</p>
+    return <p className="text-sm text-brand-600">در حال بارگذاری سبد خرید…</p>
   }
 
   if (isError || !cart) {
     return (
       <p className="text-sm text-red-600">
-        Could not load your cart. Please try again.
+        بارگذاری سبد خرید ممکن نشد. لطفاً دوباره تلاش کنید.
       </p>
     )
   }
 
   if (cart.items.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-10 text-center">
-        <h1 className="text-xl font-semibold text-slate-900">Your cart is empty</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Browse the catalog and add something you like.
+      <div className="rounded-lg border border-brand-100 bg-white p-10 text-center">
+        <h1 className="text-xl font-semibold text-brand-800">سبد خرید شما خالی است</h1>
+        <p className="mt-2 text-sm text-brand-700">
+          نگاهی به محصولات بیندازید و آنچه را دوست دارید اضافه کنید.
         </p>
         <div className="mt-5">
           <Link to="/products">
-            <Button>Browse products</Button>
+            <Button>مشاهده محصولات</Button>
           </Link>
         </div>
       </div>
@@ -41,8 +41,8 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-slate-900">
-        Your cart ({cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'})
+      <h1 className="text-2xl font-semibold text-brand-800">
+        سبد خرید شما ({formatNumber(cart.itemCount)} کالا)
       </h1>
 
       {mutationError && (
@@ -56,9 +56,9 @@ export default function CartPage() {
           {cart.items.map((item) => (
             <li
               key={item.id}
-              className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-white p-4"
+              className="flex flex-wrap items-center gap-4 rounded-lg border border-brand-100 bg-white p-4"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded bg-slate-100">
+              <div className="flex h-16 w-16 items-center justify-center rounded bg-brand-50">
                 {item.product.images?.[0]?.url ? (
                   <img
                     src={item.product.images[0].url}
@@ -66,7 +66,7 @@ export default function CartPage() {
                     className="h-full w-full rounded object-cover"
                   />
                 ) : (
-                  <span className="text-lg font-semibold text-slate-300">
+                  <span className="text-lg font-semibold text-brand-200">
                     {item.product.name.slice(0, 1)}
                   </span>
                 )}
@@ -75,21 +75,21 @@ export default function CartPage() {
               <div className="min-w-40 flex-1">
                 <Link
                   to={`/products/${item.productId}`}
-                  className="font-medium text-slate-900 hover:underline"
+                  className="font-medium text-brand-800 hover:underline"
                 >
                   {item.product.name}
                 </Link>
-                <p className="text-sm text-slate-600">
-                  {formatPrice(item.unitPrice ?? item.product.price)} each
+                <p className="text-sm text-brand-700">
+                  {formatPriceWithUnit(item.unitPrice ?? item.product.price)} برای هر عدد
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <label
                   htmlFor={`qty-${item.id}`}
-                  className="text-xs font-medium text-slate-600"
+                  className="text-xs font-medium text-brand-700"
                 >
-                  Qty
+                  تعداد
                 </label>
                 <input
                   id={`qty-${item.id}`}
@@ -104,12 +104,14 @@ export default function CartPage() {
                     )
                     updateItem.mutate({ itemId: item.id, quantity })
                   }}
-                  className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
+                  className="w-20 rounded-md border border-brand-200 px-2 py-1 text-sm"
                 />
               </div>
 
-              <div className="w-24 text-right font-medium text-slate-900">
-                {formatPrice(Number(item.unitPrice ?? item.product.price) * item.quantity)}
+              <div className="w-32 text-end font-medium text-brand-800">
+                {formatPriceWithUnit(
+                  Number(item.unitPrice ?? item.product.price) * item.quantity,
+                )}
               </div>
 
               <Button
@@ -117,40 +119,38 @@ export default function CartPage() {
                 size="sm"
                 onClick={() => removeItem.mutate({ itemId: item.id })}
               >
-                Remove
+                حذف
               </Button>
             </li>
           ))}
         </ul>
 
-        <aside className="h-fit rounded-lg border border-slate-200 bg-white p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Summary
-          </h2>
+        <aside className="h-fit rounded-lg border border-brand-100 bg-white p-6">
+          <h2 className="text-sm font-semibold text-brand-600">خلاصه سفارش</h2>
           <div className="mt-4 flex justify-between text-sm">
-            <span className="text-slate-600">Subtotal</span>
-            <span className="font-medium text-slate-900">
-              {formatPrice(cart.subtotal)}
+            <span className="text-brand-700">جمع کالاها</span>
+            <span className="font-medium text-brand-800">
+              {formatPriceWithUnit(cart.subtotal)}
             </span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-slate-600">Shipping</span>
-            <span className="text-slate-900">Calculated at checkout</span>
+            <span className="text-brand-700">هزینه ارسال</span>
+            <span className="text-brand-800">در مرحله پرداخت محاسبه می‌شود</span>
           </div>
-          <div className="mt-4 flex justify-between border-t border-slate-200 pt-4 text-base font-semibold">
-            <span>Total</span>
-            <span>{formatPrice(cart.subtotal)}</span>
+          <div className="mt-4 flex justify-between border-t border-brand-100 pt-4 text-base font-semibold">
+            <span className="text-brand-800">مبلغ قابل پرداخت</span>
+            <span className="text-brand-800">{formatPriceWithUnit(cart.subtotal)}</span>
           </div>
 
           <div className="mt-5">
             <Link to="/checkout">
-              <Button fullWidth>Proceed to checkout</Button>
+              <Button fullWidth>تکمیل خرید</Button>
             </Link>
           </div>
           <div className="mt-2">
             <Link to="/products">
               <Button variant="secondary" fullWidth>
-                Continue shopping
+                ادامه خرید
               </Button>
             </Link>
           </div>

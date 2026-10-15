@@ -201,7 +201,10 @@ describe('Admin, payments and release features (e2e)', () => {
         .send({ code, subtotal: 10 })
         .expect(200);
       expect(tooSmall.body.valid).toBe(false);
-      expect(tooSmall.body.reason).toMatch(/minimum/i);
+      // The reason is shown to Persian-speaking customers, so it comes back in
+      // Persian and quotes the minimum in Rial.
+      expect(tooSmall.body.reason).toMatch(/بالای/);
+      expect(tooSmall.body.reason).toMatch(/ریال/);
 
       const unknown = await request(server)
         .post('/api/coupons/validate')
@@ -567,7 +570,7 @@ describe('Admin, payments and release features (e2e)', () => {
         .expect(200);
 
       expect(response.body.status).toBe('pending');
-      expect(response.body.message).toMatch(/delivery/i);
+      expect(response.body.message).toMatch(/تحویل/);
 
       const order = await request(server)
         .get(`/api/orders/${orderId}`)

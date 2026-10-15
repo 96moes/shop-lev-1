@@ -12,6 +12,7 @@ import {
 } from '../../database/entities/coupon.entity.js';
 import { CreateCouponDto } from './dto/create-coupon.dto.js';
 import { UpdateCouponDto } from './dto/update-coupon.dto.js';
+import { formatMoney } from '../../common/currency.js';
 
 export interface CouponEvaluation {
   coupon: Coupon | null;
@@ -38,7 +39,7 @@ export class CouponsService {
   async findById(id: string): Promise<Coupon> {
     const coupon = await this.couponsRepository.findOne({ where: { id } });
     if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException('کد تخفیف یافت نشد');
     }
     return coupon;
   }
@@ -47,7 +48,8 @@ export class CouponsService {
    * Applies the eligibility rules to a coupon and computes the discount.
    *
    * Shared by the public validation endpoint and order checkout so the two can
-   * never disagree about whether a code is usable.
+   * never disagree about whether a code is usable. Reasons are written in
+   * Persian because they are surfaced directly to the customer at checkout.
    */
   evaluate(
     coupon: Coupon | null,
@@ -55,22 +57,22 @@ export class CouponsService {
     now: Date = new Date(),
   ): CouponEvaluation {
     if (!coupon) {
-      return { coupon: null, valid: false, reason: 'This coupon code is not valid', discount: 0 };
+      return { coupon: null, valid: false, reason: 'این کد تخفیف معتبر نیست', discount: 0 };
     }
     if (!coupon.isActive) {
-      return { coupon, valid: false, reason: 'This coupon is no longer active', discount: 0 };
+      return { coupon, valid: false, reason: 'این کد تخفیف دیگر فعال نیست', discount: 0 };
     }
     if (coupon.startsAt && coupon.startsAt > now) {
-      return { coupon, valid: false, reason: 'This coupon is not active yet', discount: 0 };
+      return { coupon, valid: false, reason: 'این کد تخفیف هنوز فعال نشده است', discount: 0 };
     }
     if (coupon.expiresAt && coupon.expiresAt < now) {
-      return { coupon, valid: false, reason: 'This coupon has expired', discount: 0 };
+      return { coupon, valid: false, reason: 'این کد تخفیف منقضی شده است', discount: 0 };
     }
     if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
       return {
         coupon,
         valid: false,
-        reason: 'This coupon has reached its usage limit',
+        reason: 'این کد تخفیف به سقف تعداد استفاده رسیده است',
         discount: 0,
       };
     }
@@ -80,7 +82,7 @@ export class CouponsService {
       return {
         coupon,
         valid: false,
-        reason: `This coupon requires a minimum order of $${minOrder.toFixed(2)}`,
+        reason: `این کد تخفیف برای سفارش‌های بالای ${formatMoney(minOrder)} است`,
         discount: 0,
       };
     }
@@ -127,7 +129,7 @@ export class CouponsService {
     const code = dto.code.trim().toUpperCase();
     const existing = await this.couponsRepository.findOne({ where: { code } });
     if (existing) {
-      throw new ConflictException(`Coupon "${code}" already exists`);
+      throw new ConflictException(`کد تخفیف «${code}» از قبل وجود دارد`);
     }
 
     const coupon = this.couponsRepository.create({
@@ -156,7 +158,7 @@ export class CouponsService {
       const code = dto.code.trim().toUpperCase();
       if (code !== coupon.code) {
         const clash = await this.couponsRepository.findOne({ where: { code } });
-        if (clash) throw new ConflictException(`Coupon "${code}" already exists`);
+        if (clash) throw new ConflictException(`کد تخفیف «${code}» از قبل وجود دارد`);
         coupon.code = code;
       }
     }

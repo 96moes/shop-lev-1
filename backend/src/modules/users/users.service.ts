@@ -102,7 +102,7 @@ export class UsersService {
   async updateProfile(id: string, changes: UpdateProfileDto): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('کاربر یافت نشد');
     }
 
     // Only assign provided fields so omitted ones keep their stored value.
@@ -114,7 +114,7 @@ export class UsersService {
 
     const updated = await this.findPublicById(id);
     if (!updated) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('کاربر یافت نشد');
     }
     return updated;
   }

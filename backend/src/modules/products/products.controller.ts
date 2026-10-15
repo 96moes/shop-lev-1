@@ -41,7 +41,7 @@ export class ProductsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Fetch a single product.' })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({ status: 404, description: 'محصول یافت نشد.' })
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Product> {
     return this.productsService.findById(id);
   }

@@ -5,8 +5,11 @@ import Field from '../components/Field'
 import { inputClass } from '../lib/formStyles'
 import { useAuth } from '../hooks/useAuth'
 import { useCart, useCreateOrder } from '../hooks/useShop'
-import { formatPrice } from '../lib/format'
+import { formatPriceWithUnit } from '../lib/format'
 import { getErrorMessage } from '../services/apiClient'
+
+/** Default country code for new addresses. */
+const DEFAULT_COUNTRY = 'IR'
 
 export default function CheckoutPage() {
   const { user } = useAuth()
@@ -22,7 +25,7 @@ export default function CheckoutPage() {
     city: '',
     state: '',
     postalCode: '',
-    country: 'US',
+    country: DEFAULT_COUNTRY,
   })
   const [couponCode, setCouponCode] = useState('')
   const [notes, setNotes] = useState('')
@@ -37,7 +40,7 @@ export default function CheckoutPage() {
     setError(null)
 
     if (!form.fullName.trim() || !form.line1.trim() || !form.city.trim()) {
-      setError('Name, address line 1 and city are required')
+      setError('نام گیرنده، نشانی و شهر الزامی است')
       return
     }
 
@@ -51,7 +54,7 @@ export default function CheckoutPage() {
           city: form.city.trim(),
           state: form.state.trim() || undefined,
           postalCode: form.postalCode.trim() || undefined,
-          country: form.country.trim() || 'US',
+          country: form.country.trim() || DEFAULT_COUNTRY,
         },
         couponCode: couponCode.trim() || undefined,
         notes: notes.trim() || undefined,
@@ -63,19 +66,19 @@ export default function CheckoutPage() {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-slate-500">Loading your cart…</p>
+    return <p className="text-sm text-brand-600">در حال بارگذاری سبد خرید…</p>
   }
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-10 text-center">
-        <h1 className="text-xl font-semibold text-slate-900">
-          Nothing to check out
+      <div className="rounded-lg border border-brand-100 bg-white p-10 text-center">
+        <h1 className="text-xl font-semibold text-brand-800">
+          سفارشی برای پرداخت وجود ندارد
         </h1>
-        <p className="mt-2 text-sm text-slate-600">Your cart is empty.</p>
+        <p className="mt-2 text-sm text-brand-700">سبد خرید شما خالی است.</p>
         <div className="mt-5">
           <Link to="/products">
-            <Button>Browse products</Button>
+            <Button>مشاهده محصولات</Button>
           </Link>
         </div>
       </div>
@@ -84,17 +87,15 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Checkout</h1>
+      <h1 className="text-2xl font-semibold text-brand-800">تکمیل خرید</h1>
 
       <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3" noValidate>
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <section className="rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Shipping address
-            </h2>
+          <section className="rounded-lg border border-brand-100 bg-white p-6">
+            <h2 className="text-sm font-semibold text-brand-600">نشانی گیرنده</h2>
 
             <div className="mt-4 flex flex-col gap-4">
-              <Field label="Full name" htmlFor="fullName">
+              <Field label="نام و نام خانوادگی" htmlFor="fullName">
                 <input
                   id="fullName"
                   required
@@ -104,7 +105,7 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <Field label="Phone" htmlFor="phone" hint="Optional.">
+              <Field label="شماره تماس" htmlFor="phone" hint="اختیاری.">
                 <input
                   id="phone"
                   value={form.phone}
@@ -113,7 +114,7 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <Field label="Address line 1" htmlFor="line1">
+              <Field label="نشانی" htmlFor="line1">
                 <input
                   id="line1"
                   required
@@ -123,7 +124,11 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <Field label="Address line 2" htmlFor="line2" hint="Optional.">
+              <Field
+                label="نشانی تکمیلی"
+                htmlFor="line2"
+                hint="اختیاری. شماره پلاک، واحد و طبقه."
+              >
                 <input
                   id="line2"
                   value={form.line2}
@@ -133,7 +138,7 @@ export default function CheckoutPage() {
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="City" htmlFor="city">
+                <Field label="شهر" htmlFor="city">
                   <input
                     id="city"
                     required
@@ -143,7 +148,7 @@ export default function CheckoutPage() {
                   />
                 </Field>
 
-                <Field label="State / region" htmlFor="state" hint="Optional.">
+                <Field label="استان" htmlFor="state" hint="اختیاری.">
                   <input
                     id="state"
                     value={form.state}
@@ -152,7 +157,7 @@ export default function CheckoutPage() {
                   />
                 </Field>
 
-                <Field label="Postal code" htmlFor="postalCode" hint="Optional.">
+                <Field label="کد پستی" htmlFor="postalCode" hint="اختیاری.">
                   <input
                     id="postalCode"
                     value={form.postalCode}
@@ -161,7 +166,7 @@ export default function CheckoutPage() {
                   />
                 </Field>
 
-                <Field label="Country" htmlFor="country" hint="Two-letter code.">
+                <Field label="کد کشور" htmlFor="country" hint="کد دو حرفی، مثلاً IR.">
                   <input
                     id="country"
                     maxLength={2}
@@ -174,17 +179,11 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Payment & extras
-            </h2>
+          <section className="rounded-lg border border-brand-100 bg-white p-6">
+            <h2 className="text-sm font-semibold text-brand-600">پرداخت و توضیحات</h2>
 
             <div className="mt-4 flex flex-col gap-4">
-              <Field
-                label="Coupon code"
-                htmlFor="couponCode"
-                hint="Optional. Try WELCOME10."
-              >
+              <Field label="کد تخفیف" htmlFor="couponCode" hint="اختیاری. مثلاً WELCOME10.">
                 <input
                   id="couponCode"
                   value={couponCode}
@@ -193,7 +192,7 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <Field label="Order notes" htmlFor="notes" hint="Optional.">
+              <Field label="توضیحات سفارش" htmlFor="notes" hint="اختیاری.">
                 <textarea
                   id="notes"
                   rows={3}
@@ -203,48 +202,51 @@ export default function CheckoutPage() {
                 />
               </Field>
 
-              <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                Payment is collected after your order is placed.
+              <p className="rounded-md bg-brand-50 px-3 py-2 text-xs text-brand-700">
+                مبلغ سفارش پس از ثبت، در صفحه سفارش پرداخت می‌شود.
               </p>
             </div>
           </section>
         </div>
 
-        <aside className="h-fit rounded-lg border border-slate-200 bg-white p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Order summary
-          </h2>
+        <aside className="h-fit rounded-lg border border-brand-100 bg-white p-6">
+          <h2 className="text-sm font-semibold text-brand-600">خلاصه سفارش</h2>
 
           <ul className="mt-4 flex flex-col gap-3">
             {cart.items.map((item) => (
               <li key={item.id} className="flex justify-between gap-3 text-sm">
-                <span className="text-slate-600">
+                <span className="text-brand-700">
                   {item.product.name} × {item.quantity}
                 </span>
-                <span className="text-slate-900">
-                  {formatPrice(Number(item.unitPrice ?? item.product.price) * item.quantity)}
+                <span className="text-brand-800">
+                  {formatPriceWithUnit(
+                    Number(item.unitPrice ?? item.product.price) * item.quantity,
+                  )}
                 </span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-4 flex justify-between border-t border-slate-200 pt-4 text-base font-semibold">
-            <span>Subtotal</span>
-            <span>{formatPrice(cart.subtotal)}</span>
+          <div className="mt-4 flex justify-between border-t border-brand-100 pt-4 text-base font-semibold">
+            <span className="text-brand-800">جمع کالاها</span>
+            <span className="text-brand-800">{formatPriceWithUnit(cart.subtotal)}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Any coupon discount is applied when the order is placed.
+          <p className="mt-1 text-xs text-brand-600">
+            تخفیف کد وارد‌شده هنگام ثبت سفارش اعمال می‌شود.
           </p>
 
           {error && (
-            <p role="alert" className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p
+              role="alert"
+              className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
               {error}
             </p>
           )}
 
           <div className="mt-5">
             <Button type="submit" fullWidth disabled={createOrder.isPending}>
-              {createOrder.isPending ? 'Placing order…' : 'Place order'}
+              {createOrder.isPending ? 'در حال ثبت سفارش…' : 'ثبت سفارش'}
             </Button>
           </div>
         </aside>

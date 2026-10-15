@@ -2,6 +2,24 @@
 
 A full-stack e-commerce platform: a React single-page application backed by a NestJS REST API and a PostgreSQL database.
 
+## Storefront Localisation
+
+The customer-facing application is Persian (Farsi) and right-to-left, priced in
+Iranian Rial, and themed in royal green.
+
+| Aspect   | Choice                                                                 |
+| -------- | ---------------------------------------------------------------------- |
+| Language | Persian (`fa-IR`); `<html lang="fa" dir="rtl">` sets the reading order  |
+| Currency | Iranian Rial (`IRR`), shown with Persian digits and the ریال label      |
+| Calendar | Jalali, via `Intl.DateTimeFormat('fa-IR-u-ca-persian')`                 |
+| Theme    | Royal green brand ramp declared once as `--color-brand-*` in `frontend/src/index.css` |
+
+Formatting lives in one module on each side of the API —
+[`frontend/src/lib/format.ts`](frontend/src/lib/format.ts) and
+[`backend/src/common/currency.ts`](backend/src/common/currency.ts) — so the
+locale and currency are never re-specified at a call site. API error messages
+returned to customers are written in Persian as well.
+
 ## Tech Stack
 
 | Layer     | Technology                                                              |
@@ -149,6 +167,11 @@ Main tables: `users`, `products`, `categories`, `product_images`, `carts`, `orde
 - Stripe
 - PayPal
 - Cash on Delivery (COD)
+
+Payment rows are recorded in Iranian Rial (`IRR`); see the `RialCurrency`
+migration in `backend/src/database/migrations/`. Stripe and PayPal remain
+available for server configurations that support them, and report as
+unconfigured when their credentials are absent.
 
 ## Panels
 

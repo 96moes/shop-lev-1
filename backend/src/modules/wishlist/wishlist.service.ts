@@ -31,14 +31,14 @@ export class WishlistService {
       where: { id: productId },
     });
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('محصول یافت نشد');
     }
 
     const existing = await this.wishlistRepository.findOne({
       where: { userId, productId },
     });
     if (existing) {
-      throw new ConflictException('This product is already in your wishlist');
+      throw new ConflictException('این محصول از قبل در فهرست علاقه‌مندی‌های شماست');
     }
 
     const entry = await this.wishlistRepository.save(
@@ -54,7 +54,7 @@ export class WishlistService {
       where: { userId, productId },
     });
     if (!entry) {
-      throw new NotFoundException('This product is not in your wishlist');
+      throw new NotFoundException('این محصول در فهرست علاقه‌مندی‌های شما نیست');
     }
     await this.wishlistRepository.remove(entry);
   }
@@ -78,7 +78,7 @@ export class WishlistService {
       relations: { product: { images: true } },
     });
     if (!entry) {
-      throw new NotFoundException('Wishlist item not found');
+      throw new NotFoundException('قلم علاقه‌مندی یافت نشد');
     }
     return entry;
   }

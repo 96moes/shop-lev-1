@@ -95,7 +95,7 @@ export class ProductsService {
       relations: { category: true, images: true },
     });
     if (!product || (!includeInactive && !product.isActive)) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('محصول یافت نشد');
     }
     return product;
   }
@@ -166,7 +166,7 @@ export class ProductsService {
   private async assertSlugAvailable(slug: string): Promise<void> {
     const existing = await this.productsRepository.findOne({ where: { slug } });
     if (existing) {
-      throw new ConflictException(`A product with slug "${slug}" already exists`);
+      throw new ConflictException(`محصولی با نامک «${slug}» از قبل وجود دارد`);
     }
   }
 }

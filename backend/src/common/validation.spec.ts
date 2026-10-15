@@ -61,8 +61,10 @@ describe('ValidationPipe (unit)', () => {
       .send({ price: 10 })
       .expect(400);
 
+    // Messages name the offending field in Persian, because they are shown
+    // directly to Persian-speaking users.
     expect(response.body.message).toEqual(
-      expect.arrayContaining([expect.stringContaining('name')]),
+      expect.arrayContaining([expect.stringContaining('نام محصول')]),
     );
   });
 
@@ -84,6 +86,7 @@ describe('ValidationPipe (unit)', () => {
       .send({ name: 'Desk Lamp', price: 10, isAdmin: true })
       .expect(400);
 
+    // Field names stay as sent so the client can map the error to its input.
     expect(response.body.message).toEqual(
       expect.arrayContaining([expect.stringContaining('isAdmin')]),
     );

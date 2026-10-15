@@ -2,12 +2,13 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import ProductCard from './ProductCard'
+import { formatPriceWithUnit } from '../lib/format'
 import type { Product } from '../types/api'
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
     id: 'p1',
-    name: 'Aurora Desk Lamp',
+    name: 'چراغ رومیزی آرورا',
     slug: 'aurora-desk-lamp',
     description: null,
     price: '49.99',
@@ -32,12 +33,20 @@ function renderCard(product: Product) {
 }
 
 describe('ProductCard', () => {
-  it('shows the name, price and stock', () => {
+  it('shows the name, Rial price and stock in Persian', () => {
     renderCard(makeProduct())
 
-    expect(screen.getByText('Aurora Desk Lamp')).toBeInTheDocument()
-    expect(screen.getByText('$49.99')).toBeInTheDocument()
-    expect(screen.getByText('10 in stock')).toBeInTheDocument()
+    expect(screen.getByText('چراغ رومیزی آرورا')).toBeInTheDocument()
+    expect(screen.getByText(formatPriceWithUnit('49.99'))).toBeInTheDocument()
+    expect(screen.getByText('۱۰ عدد در انبار')).toBeInTheDocument()
+  })
+
+  it('prices in Rial and never in dollars', () => {
+    renderCard(makeProduct())
+
+    const price = screen.getByText(formatPriceWithUnit('49.99'))
+    expect(price).toHaveTextContent('ریال')
+    expect(price).not.toHaveTextContent('$')
   })
 
   it('links to the product detail page', () => {
@@ -49,20 +58,22 @@ describe('ProductCard', () => {
   it('shows the original price when discounted', () => {
     renderCard(makeProduct({ compareAtPrice: '69.99' }))
 
-    expect(screen.getByText('$69.99')).toBeInTheDocument()
+    expect(screen.getByText(formatPriceWithUnit('69.99'))).toBeInTheDocument()
   })
 
   it('does not strike through a price that is not actually lower', () => {
     // compareAtPrice below price is not a discount, and must not be shown as one.
     renderCard(makeProduct({ compareAtPrice: '39.99' }))
 
-    expect(screen.queryByText('$39.99')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(formatPriceWithUnit('39.99')),
+    ).not.toBeInTheDocument()
   })
 
-  it('reports an out-of-stock product', () => {
+  it('reports an out-of-stock product in Persian', () => {
     renderCard(makeProduct({ stock: 0 }))
 
-    expect(screen.getByText('Out of stock')).toBeInTheDocument()
+    expect(screen.getByText('ناموجود')).toBeInTheDocument()
   })
 
   it('shows the category when present', () => {
@@ -70,7 +81,7 @@ describe('ProductCard', () => {
       makeProduct({
         category: {
           id: 'c1',
-          name: 'Lighting',
+          name: 'روشنایی',
           slug: 'lighting',
           description: null,
           imageUrl: null,
@@ -79,7 +90,7 @@ describe('ProductCard', () => {
       }),
     )
 
-    expect(screen.getByText('Lighting')).toBeInTheDocument()
+    expect(screen.getByText('روشنایی')).toBeInTheDocument()
   })
 
   it('renders an image when the product has one', () => {
@@ -89,7 +100,7 @@ describe('ProductCard', () => {
           {
             id: 'i1',
             url: 'https://example.com/lamp.jpg',
-            altText: 'A brass lamp',
+            altText: 'یک چراغ برنجی',
             sortOrder: 0,
             isPrimary: true,
           },
@@ -97,6 +108,6 @@ describe('ProductCard', () => {
       }),
     )
 
-    expect(screen.getByAltText('A brass lamp')).toBeInTheDocument()
+    expect(screen.getByAltText('یک چراغ برنجی')).toBeInTheDocument()
   })
 })

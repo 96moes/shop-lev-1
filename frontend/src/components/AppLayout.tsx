@@ -1,16 +1,21 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useCart } from '../hooks/useShop'
+import { formatNumber } from '../lib/format'
+import { SITE_NAME, SITE_TAGLINE } from '../lib/site'
 import Button from './Button'
 import NotificationBell from './NotificationBell'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm font-medium transition-colors ${
-    isActive ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'
+    isActive ? 'text-brand-800' : 'text-brand-600 hover:text-brand-800'
   }`
 
 /**
  * Root layout shared by all pages: header navigation, page content and footer.
+ *
+ * Layout uses logical utilities (`ms-`/`me-`) rather than left/right ones so the
+ * whole shell mirrors correctly under the document's right-to-left direction.
  */
 export default function AppLayout() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
@@ -25,46 +30,55 @@ export default function AppLayout() {
   const itemCount = cart?.itemCount ?? 0
 
   return (
-    <div className="flex min-h-svh flex-col bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="flex min-h-svh flex-col bg-brand-50">
+      <header className="border-b border-brand-100 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-4">
-          <Link to="/" className="text-base font-semibold text-slate-900">
-            E-Commerce Platform
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-base font-bold text-brand-800"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-700 text-sm font-bold text-white"
+            >
+              س
+            </span>
+            {SITE_NAME}
           </Link>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex flex-wrap items-center gap-4">
             <NavLink to="/" end className={navLinkClass}>
-              Home
+              خانه
             </NavLink>
             <NavLink to="/products" className={navLinkClass}>
-              Products
+              محصولات
             </NavLink>
             {isAuthenticated && (
               <NavLink to="/orders" className={navLinkClass}>
-                Orders
+                سفارش‌ها
               </NavLink>
             )}
             {isAuthenticated && (
               <NavLink to="/wishlist" className={navLinkClass}>
-                Wishlist
+                علاقه‌مندی‌ها
               </NavLink>
             )}
             {isAdmin && (
               <NavLink to="/admin" className={navLinkClass}>
-                Admin
+                مدیریت
               </NavLink>
             )}
           </nav>
 
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ms-auto flex flex-wrap items-center gap-4">
             <NavLink to="/cart" className={navLinkClass}>
-              Cart
+              سبد خرید
               {itemCount > 0 && (
                 <span
                   data-testid="cart-count"
-                  className="ml-1 rounded-full bg-slate-900 px-2 py-0.5 text-xs text-white"
+                  className="ms-1 rounded-full bg-brand-700 px-2 py-0.5 text-xs text-white"
                 >
-                  {itemCount}
+                  {formatNumber(itemCount)}
                 </span>
               )}
             </NavLink>
@@ -76,16 +90,16 @@ export default function AppLayout() {
                   {user?.firstName}
                 </NavLink>
                 <Button variant="secondary" size="sm" onClick={handleLogout}>
-                  Sign out
+                  خروج
                 </Button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <NavLink to="/login" className={navLinkClass}>
-                  Sign in
+                  ورود
                 </NavLink>
                 <Button size="sm" onClick={() => navigate('/register')}>
-                  Register
+                  ثبت‌نام
                 </Button>
               </div>
             )}
@@ -97,9 +111,9 @@ export default function AppLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6">
-        <div className="mx-auto max-w-6xl px-6 text-sm text-slate-500">
-          E-Commerce Platform — demo storefront.
+      <footer className="border-t border-brand-100 bg-white py-6">
+        <div className="mx-auto max-w-6xl px-6 text-sm text-brand-600">
+          {SITE_NAME} — {SITE_TAGLINE}
         </div>
       </footer>
     </div>

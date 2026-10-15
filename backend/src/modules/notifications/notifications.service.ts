@@ -74,7 +74,7 @@ export class NotificationsService {
     });
 
     if (!notification) {
-      throw new NotFoundException('Notification not found');
+      throw new NotFoundException('اعلان یافت نشد');
     }
 
     if (!notification.isRead) {

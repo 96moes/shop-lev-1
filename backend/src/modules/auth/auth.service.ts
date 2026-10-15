@@ -43,7 +43,7 @@ export class AuthService {
   async register(dto: CreateUserDto): Promise<{ user: User; tokens: IssuedTokens }> {
     const existing = await this.usersService.findByEmailWithPassword(dto.email);
     if (existing) {
-      throw new ConflictException('An account with this email already exists');
+      throw new ConflictException('حسابی با این ایمیل از قبل وجود دارد');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
@@ -73,10 +73,10 @@ export class AuthService {
     const matches = await bcrypt.compare(password, hash);
 
     if (!user || !matches) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('ایمیل یا گذرواژه نادرست است');
     }
     if (!user.isActive) {
-      throw new UnauthorizedException('This account is disabled');
+      throw new UnauthorizedException('این حساب غیرفعال شده است');
     }
 
     return user;
@@ -103,17 +103,17 @@ export class AuthService {
         secret: this.refreshSecret,
       });
     } catch {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException('توکن تازه‌سازی نامعتبر یا منقضی شده است');
     }
 
     const user = await this.usersService.findWithRefreshTokenHash(payload.sub);
     if (!user?.refreshTokenHash || !user.refreshTokenIssuedAt) {
-      throw new UnauthorizedException('Refresh token is no longer valid');
+      throw new UnauthorizedException('توکن تازه‌سازی دیگر معتبر نیست');
     }
 
     const matches = hashRefreshToken(refreshToken) === user.refreshTokenHash;
     if (!matches) {
-      throw new UnauthorizedException('Refresh token is no longer valid');
+      throw new UnauthorizedException('توکن تازه‌سازی دیگر معتبر نیست');
     }
 
     const tokens = await this.buildTokens(user);
@@ -128,7 +128,7 @@ export class AuthService {
 
     if (!rotated) {
       // Another request redeemed this token first.
-      throw new UnauthorizedException('Refresh token is no longer valid');
+      throw new UnauthorizedException('توکن تازه‌سازی دیگر معتبر نیست');
     }
 
     return { user, tokens };

@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(payload: AccessTokenPayload): Promise<AuthUser> {
     const user = await this.usersService.findPublicById(payload.sub);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Account is not active');
+      throw new UnauthorizedException('حساب کاربری فعال نیست');
     }
 
     return { id: user.id, email: user.email, role: user.role };

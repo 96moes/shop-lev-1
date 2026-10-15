@@ -33,7 +33,7 @@ describe('ProtectedRoute', () => {
 
     renderGuard()
 
-    expect(screen.getByText(/checking your session/i)).toBeInTheDocument()
+    expect(screen.getByText(/در حال بررسی نشست شما/)).toBeInTheDocument()
     // Critically, a reload must not bounce a signed-in user to the login screen.
     expect(screen.queryByText('Login screen')).not.toBeInTheDocument()
   })
@@ -72,7 +72,7 @@ describe('ProtectedRoute', () => {
 
     renderGuard({ adminOnly: true })
 
-    expect(screen.getByText(/not authorised/i)).toBeInTheDocument()
+    expect(screen.getByText(/دسترسی مجاز نیست/)).toBeInTheDocument()
     expect(screen.queryByText('Secret content')).not.toBeInTheDocument()
   })
 

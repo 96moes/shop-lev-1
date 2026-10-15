@@ -3,8 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import ProductReviews from '../components/ProductReviews'
 import { getErrorMessage } from '../services/apiClient'
-import { formatPrice } from '../lib/format'
-import { useAddToCart, useProduct, useWishlist, useWishlistMutations } from '../hooks/useShop'
+import { formatNumber, formatPriceWithUnit } from '../lib/format'
+import {
+  useAddToCart,
+  useProduct,
+  useWishlist,
+  useWishlistMutations,
+} from '../hooks/useShop'
 import { useAuth } from '../hooks/useAuth'
 
 export default function ProductDetailPage() {
@@ -19,19 +24,19 @@ export default function ProductDetailPage() {
   const [message, setMessage] = useState<string | null>(null)
 
   if (isLoading) {
-    return <p className="text-sm text-slate-500">Loading product…</p>
+    return <p className="text-sm text-brand-600">در حال بارگذاری محصول…</p>
   }
 
   if (isError || !product) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-10 text-center">
-        <h1 className="text-lg font-semibold text-slate-900">Product not found</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          This product may have been removed.
+      <div className="rounded-lg border border-brand-100 bg-white p-10 text-center">
+        <h1 className="text-lg font-semibold text-brand-800">محصول یافت نشد</h1>
+        <p className="mt-2 text-sm text-brand-700">
+          این محصول حذف شده یا دیگر در دسترس نیست.
         </p>
         <div className="mt-4">
           <Link to="/products">
-            <Button variant="secondary">Back to products</Button>
+            <Button variant="secondary">بازگشت به محصولات</Button>
           </Link>
         </div>
       </div>
@@ -50,10 +55,10 @@ export default function ProductDetailPage() {
     try {
       if (isSaved) {
         await wishlistMutations.remove.mutateAsync(product!.id)
-        setMessage('Removed from your wishlist.')
+        setMessage('از فهرست علاقه‌مندی‌ها حذف شد.')
       } else {
         await wishlistMutations.add.mutateAsync(product!.id)
-        setMessage('Saved to your wishlist.')
+        setMessage('به فهرست علاقه‌مندی‌ها اضافه شد.')
       }
     } catch (error) {
       setMessage(getErrorMessage(error))
@@ -71,7 +76,9 @@ export default function ProductDetailPage() {
 
     try {
       await addToCart.mutateAsync({ productId: product!.id, quantity })
-      setMessage(`Added ${quantity} × ${product!.name} to your cart.`)
+      setMessage(
+        `${formatNumber(quantity)} عدد «${product!.name}» به سبد خرید اضافه شد.`,
+      )
     } catch (error) {
       setMessage(getErrorMessage(error))
     }
@@ -79,12 +86,12 @@ export default function ProductDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to="/products" className="text-sm text-slate-600 hover:text-slate-900">
-        ← Back to products
+      <Link to="/products" className="text-sm text-brand-600 hover:text-brand-800">
+        بازگشت به محصولات
       </Link>
 
-      <div className="grid gap-8 rounded-lg border border-slate-200 bg-white p-6 lg:grid-cols-2">
-        <div className="flex h-80 items-center justify-center rounded-lg bg-slate-100">
+      <div className="grid gap-8 rounded-lg border border-brand-100 bg-white p-6 lg:grid-cols-2">
+        <div className="flex h-80 items-center justify-center rounded-lg bg-brand-50">
           {product.images?.[0]?.url ? (
             <img
               src={product.images[0].url}
@@ -92,7 +99,7 @@ export default function ProductDetailPage() {
               className="h-full w-full rounded-lg object-cover"
             />
           ) : (
-            <span className="text-5xl font-semibold text-slate-300">
+            <span className="text-5xl font-semibold text-brand-200">
               {product.name.slice(0, 1)}
             </span>
           )}
@@ -102,42 +109,51 @@ export default function ProductDetailPage() {
           {product.category && (
             <Link
               to={`/products?categoryId=${product.category.id}`}
-              className="text-xs uppercase tracking-wide text-slate-500 hover:text-slate-900"
+              className="text-xs tracking-wide text-brand-600 hover:text-brand-800"
             >
               {product.category.name}
             </Link>
           )}
 
-          <h1 className="text-2xl font-semibold text-slate-900">{product.name}</h1>
+          <h1 className="text-2xl font-semibold text-brand-800">{product.name}</h1>
 
-          <div className="flex items-baseline gap-3">
-            <span className="text-2xl font-semibold text-slate-900">
-              {formatPrice(product.price)}
+          <div className="flex flex-wrap items-baseline gap-3">
+            <span className="text-2xl font-bold text-brand-800">
+              {formatPriceWithUnit(product.price)}
             </span>
             {onSale && (
-              <span className="text-slate-400 line-through">
-                {formatPrice(product.compareAtPrice as string)}
+              <span className="text-brand-400 line-through">
+                {formatPriceWithUnit(product.compareAtPrice as string)}
               </span>
             )}
           </div>
 
           {product.description && (
-            <p className="text-slate-600">{product.description}</p>
+            <p className="text-brand-700">{product.description}</p>
           )}
 
-          <p className={`text-sm font-medium ${inStock ? 'text-green-700' : 'text-red-600'}`}>
-            {inStock ? `${product.stock} in stock` : 'Out of stock'}
+          <p
+            className={`text-sm font-medium ${
+              inStock ? 'text-brand-700' : 'text-red-600'
+            }`}
+          >
+            {inStock
+              ? `${formatNumber(product.stock)} عدد در انبار موجود است`
+              : 'ناموجود'}
           </p>
 
           {product.sku && (
-            <p className="text-xs text-slate-500">SKU: {product.sku}</p>
+            <p className="text-xs text-brand-600">کد کالا: {product.sku}</p>
           )}
 
           {inStock && (
-            <div className="flex items-end gap-3">
+            <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col gap-1">
-                <label htmlFor="quantity" className="text-xs font-medium text-slate-600">
-                  Quantity
+                <label
+                  htmlFor="quantity"
+                  className="text-xs font-medium text-brand-700"
+                >
+                  تعداد
                 </label>
                 <input
                   id="quantity"
@@ -150,28 +166,30 @@ export default function ProductDetailPage() {
                       Math.max(1, Math.min(product.stock, Number(event.target.value) || 1)),
                     )
                   }
-                  className="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-24 rounded-md border border-brand-200 px-3 py-2 text-sm"
                 />
               </div>
 
               <Button onClick={handleAddToCart} disabled={addToCart.isPending}>
-                {addToCart.isPending ? 'Adding…' : 'Add to cart'}
+                {addToCart.isPending ? 'در حال افزودن…' : 'افزودن به سبد خرید'}
               </Button>
 
               {isAuthenticated && (
                 <Button
                   variant="secondary"
                   onClick={() => toggleWishlist()}
-                  disabled={wishlistMutations.add.isPending || wishlistMutations.remove.isPending}
+                  disabled={
+                    wishlistMutations.add.isPending || wishlistMutations.remove.isPending
+                  }
                 >
-                  {isSaved ? 'Saved ♥' : 'Save to wishlist'}
+                  {isSaved ? 'ذخیره شد ♥' : 'افزودن به علاقه‌مندی‌ها'}
                 </Button>
               )}
             </div>
           )}
 
           {message && (
-            <p role="status" className="text-sm text-slate-700">
+            <p role="status" className="text-sm text-brand-700">
               {message}
             </p>
           )}

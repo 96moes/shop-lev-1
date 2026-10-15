@@ -16,6 +16,7 @@ import {
   PaymentStatus,
 } from '../../database/entities/payment.entity.js';
 import { NotificationType } from '../../database/entities/notification.entity.js';
+import { CURRENCY_CODE, formatMoney } from '../../common/currency.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { VerifyPaymentDto } from './dto/verify-payment.dto.js';
 import type { PaymentResultDto } from './dto/payment-result.dto.js';
@@ -49,7 +50,7 @@ export class PaymentsService {
       case PaymentMethod.COD:
         return this.cod;
       default:
-        throw new BadRequestException('Unsupported payment method');
+        throw new BadRequestException('روش پرداخت پشتیبانی نمی‌شود');
     }
   }
 
@@ -69,11 +70,11 @@ export class PaymentsService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('سفارش یافت نشد');
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      throw new ConflictException('This order was cancelled');
+      throw new ConflictException('این سفارش لغو شده است');
     }
 
     // Idempotency: a settled order is not charged again.
@@ -81,12 +82,12 @@ export class PaymentsService {
       where: { orderId: order.id, status: PaymentStatus.PAID },
     });
     if (alreadyPaid) {
-      throw new ConflictException('This order has already been paid');
+      throw new ConflictException('این سفارش پیش‌تر پرداخت شده است');
     }
 
     const outcome: VerifyPaymentOutcome = await this.providerFor(dto.method).verify({
       amount: order.total,
-      currency: 'USD',
+      currency: CURRENCY_CODE,
       transactionId: dto.transactionId,
     });
 
@@ -96,7 +97,7 @@ export class PaymentsService {
         method: dto.method,
         status: outcome.status,
         amount: order.total,
-        currency: 'USD',
+        currency: CURRENCY_CODE,
         transactionId: outcome.transactionId,
         providerPayload: outcome.payload,
         failureReason: outcome.failureReason ?? null,
@@ -112,8 +113,8 @@ export class PaymentsService {
       await this.notifications.create({
         userId,
         type: NotificationType.PAYMENT,
-        title: 'Payment received',
-        message: `We received your payment of $${Number(order.total).toFixed(2)} for order ${order.orderNumber}.`,
+        title: 'پرداخت دریافت شد',
+        message: `پرداخت شما به مبلغ ${formatMoney(order.total)} برای سفارش ${order.orderNumber} دریافت شد.`,
         link: `/orders/${order.id}`,
         data: { orderId: order.id, paymentId: payment.id },
       });
@@ -134,13 +135,13 @@ export class PaymentsService {
   private describe(outcome: VerifyPaymentOutcome): string {
     switch (outcome.status) {
       case PaymentStatus.PAID:
-        return 'Payment verified and recorded.';
+        return 'پرداخت تأیید و ثبت شد.';
       case PaymentStatus.PENDING:
         return outcome.failureReason
-          ? `Payment not completed yet: ${outcome.failureReason}`
-          : 'Payment recorded. Cash will be collected on delivery.';
+          ? `پرداخت هنوز تکمیل نشده است: ${outcome.failureReason}`
+          : 'پرداخت ثبت شد. مبلغ هنگام تحویل کالا دریافت می‌شود.';
       default:
-        return outcome.failureReason ?? 'Payment could not be verified.';
+        return outcome.failureReason ?? 'پرداخت تأیید نشد.';
     }
   }
 
@@ -150,7 +151,7 @@ export class PaymentsService {
       where: { id: orderId, userId },
     });
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('سفارش یافت نشد');
     }
 
     return this.paymentsRepository.find({

@@ -37,7 +37,7 @@ export class Product {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  /** Stored in the major currency unit (USD). */
+  /** Stored in the major currency unit (Iranian Rial). */
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   price: string;
 

@@ -59,11 +59,11 @@ export class CartService {
       where: { id: dto.productId },
     });
     if (!product || !product.isActive) {
-      throw new NotFoundException('Product not found or unavailable');
+      throw new NotFoundException('محصول یافت نشد یا در دسترس نیست');
     }
     if (product.stock < dto.quantity) {
       throw new BadRequestException(
-        `Only ${product.stock} item(s) of "${product.name}" are in stock`,
+        `تنها ${product.stock} عدد از «${product.name}» موجود است`,
       );
     }
 
@@ -107,11 +107,11 @@ export class CartService {
       where: { id: item.productId },
     });
     if (!product) {
-      throw new NotFoundException('Product no longer exists');
+      throw new NotFoundException('این محصول دیگر وجود ندارد');
     }
     if (product.stock < dto.quantity) {
       throw new BadRequestException(
-        `Only ${product.stock} item(s) of "${product.name}" are in stock`,
+        `تنها ${product.stock} عدد از «${product.name}» موجود است`,
       );
     }
 
@@ -141,7 +141,7 @@ export class CartService {
       where: { id: itemId, cartId },
     });
     if (!item) {
-      throw new NotFoundException('Cart item not found');
+      throw new NotFoundException('قلم سبد خرید یافت نشد');
     }
     return item;
   }

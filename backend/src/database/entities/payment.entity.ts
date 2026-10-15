@@ -51,7 +51,8 @@ export class Payment {
   @Column({ type: 'numeric', precision: 10, scale: 2 })
   amount: string;
 
-  @Column({ type: 'varchar', length: 10, default: 'USD' })
+  /** Store currency: Iranian Rial. */
+  @Column({ type: 'varchar', length: 10, default: 'IRR' })
   currency: string;
 
   /** Provider-side identifier (Stripe PaymentIntent, PayPal capture, ...). */

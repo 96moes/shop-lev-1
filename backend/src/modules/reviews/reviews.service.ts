@@ -42,7 +42,7 @@ export class ReviewsService {
       where: { id: productId },
     });
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('محصول یافت نشد');
     }
 
     const [items, total] = await this.reviewsRepository.findAndCount({
@@ -76,14 +76,14 @@ export class ReviewsService {
       where: { id: productId },
     });
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('محصول یافت نشد');
     }
 
     const existing = await this.reviewsRepository.findOne({
       where: { userId, productId },
     });
     if (existing) {
-      throw new ConflictException('You have already reviewed this product');
+      throw new ConflictException('شما پیش‌تر برای این محصول دیدگاه ثبت کرده‌اید');
     }
 
     const review = this.reviewsRepository.create({
@@ -117,7 +117,7 @@ export class ReviewsService {
   async setApproved(id: string, isApproved: boolean): Promise<Review> {
     const review = await this.reviewsRepository.findOne({ where: { id } });
     if (!review) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException('دیدگاه یافت نشد');
     }
     review.isApproved = isApproved;
     return this.reviewsRepository.save(review);
@@ -139,10 +139,10 @@ export class ReviewsService {
     const review = await this.reviewsRepository.findOne({ where: { id } });
 
     if (!review) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException('دیدگاه یافت نشد');
     }
     if (review.userId !== userId) {
-      throw new ForbiddenException('You can only manage your own reviews');
+      throw new ForbiddenException('شما تنها می‌توانید دیدگاه‌های خودتان را مدیریت کنید');
     }
 
     return review;

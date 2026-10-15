@@ -13,8 +13,8 @@ export default function ProtectedRoute({ adminOnly = false }: { adminOnly?: bool
 
   if (isLoading) {
     return (
-      <div className="py-16 text-center text-sm text-slate-500">
-        Checking your session…
+      <div className="py-16 text-center text-sm text-brand-600">
+        در حال بررسی نشست شما…
       </div>
     )
   }
@@ -27,9 +27,9 @@ export default function ProtectedRoute({ adminOnly = false }: { adminOnly?: bool
   if (adminOnly && !isAdmin) {
     return (
       <div className="py-16 text-center">
-        <h1 className="text-xl font-semibold text-slate-900">Not authorised</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          This area is restricted to administrators.
+        <h1 className="text-xl font-semibold text-brand-900">دسترسی مجاز نیست</h1>
+        <p className="mt-2 text-sm text-brand-700">
+          این بخش تنها برای مدیران در دسترس است.
         </p>
       </div>
     )

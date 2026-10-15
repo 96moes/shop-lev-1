@@ -11,10 +11,12 @@ interface ButtonProps {
 }
 
 const VARIANTS: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'bg-slate-900 text-white hover:bg-slate-700 disabled:bg-slate-400',
-  secondary: 'bg-white text-slate-900 border border-slate-300 hover:bg-slate-50',
+  primary:
+    'bg-brand-700 text-white hover:bg-brand-800 focus-visible:bg-brand-800 disabled:bg-brand-400',
+  secondary:
+    'bg-white text-brand-800 border border-brand-200 hover:bg-brand-50 focus-visible:bg-brand-50',
   danger: 'bg-red-600 text-white hover:bg-red-500',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100',
+  ghost: 'bg-transparent text-brand-700 hover:bg-brand-50',
 }
 
 /** Shared button with consistent sizing and variants. */

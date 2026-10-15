@@ -52,12 +52,12 @@ describe('PaypalPaymentProvider', () => {
     process.env.PAYPAL_CLIENT_SECRET = 'client-secret';
     mockPaypalCapture({
       status: 'COMPLETED',
-      amount: { value: '42.50', currency_code: 'USD' },
+      amount: { value: '42.50', currency_code: 'IRR' },
     });
 
     const result = await new PaypalPaymentProvider().verify({
       amount: '42.50',
-      currency: 'USD',
+      currency: 'IRR',
       transactionId: 'PAY-ORDER-1',
     });
 
@@ -69,12 +69,12 @@ describe('PaypalPaymentProvider', () => {
     process.env.PAYPAL_CLIENT_SECRET = 'client-secret';
     mockPaypalCapture({
       status: 'COMPLETED',
-      amount: { value: '1.00', currency_code: 'USD' },
+      amount: { value: '1.00', currency_code: 'IRR' },
     });
 
     const result = await new PaypalPaymentProvider().verify({
       amount: '42.50',
-      currency: 'USD',
+      currency: 'IRR',
       transactionId: 'PAY-ORDER-2',
     });
 
@@ -92,7 +92,7 @@ describe('PaypalPaymentProvider', () => {
 
     const result = await new PaypalPaymentProvider().verify({
       amount: '42.50',
-      currency: 'USD',
+      currency: 'IRR',
       transactionId: 'PAY-ORDER-3',
     });
 

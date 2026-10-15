@@ -24,7 +24,7 @@ export class CategoriesService {
   async findById(id: string): Promise<Category> {
     const category = await this.categoriesRepository.findOne({ where: { id } });
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException('دسته‌بندی یافت نشد');
     }
     return category;
   }
@@ -76,7 +76,7 @@ export class CategoriesService {
       where: { slug },
     });
     if (existing) {
-      throw new ConflictException(`A category with slug "${slug}" already exists`);
+      throw new ConflictException(`دسته‌بندی‌ای با نامک «${slug}» از قبل وجود دارد`);
     }
   }
 }

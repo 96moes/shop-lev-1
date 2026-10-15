@@ -3,6 +3,6 @@ import { IsUUID } from 'class-validator';
 
 export class AddWishlistItemDto {
   @ApiProperty({ format: 'uuid' })
-  @IsUUID()
+  @IsUUID('all', { message: 'شناسه وارد‌شده معتبر نیست' })
   productId: string;
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNotificationMutations, useNotifications } from '../hooks/useShop'
-import { formatDate } from '../lib/format'
+import { formatDate, formatNumber } from '../lib/format'
 
 /**
  * Header notification bell with an unread badge and a dismissible panel.
@@ -26,73 +26,77 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={toggle}
-        aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+        aria-label={
+          unread > 0
+            ? `اعلان‌ها، ${formatNumber(unread)} خوانده‌نشده`
+            : 'اعلان‌ها'
+        }
         aria-expanded={open}
-        className="relative text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+        className="relative text-sm font-medium text-brand-600 transition-colors hover:text-brand-800"
       >
-        Notifications
+        اعلان‌ها
         {unread > 0 && (
           <span
             data-testid="notification-count"
-            className="ml-1 rounded-full bg-red-600 px-2 py-0.5 text-xs text-white"
+            className="ms-1 rounded-full bg-red-600 px-2 py-0.5 text-xs text-white"
           >
-            {unread}
+            {formatNumber(unread)}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
-            <span className="text-sm font-semibold text-slate-900">Notifications</span>
+        <div className="absolute end-0 z-20 mt-2 w-80 rounded-lg border border-brand-100 bg-white shadow-lg">
+          <div className="flex items-center justify-between border-b border-brand-100 px-4 py-2">
+            <span className="text-sm font-semibold text-brand-800">اعلان‌ها</span>
             {unread > 0 && (
               <button
                 type="button"
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
-                className="text-xs text-slate-600 hover:text-slate-900"
+                className="text-xs text-brand-600 hover:text-brand-800"
               >
-                Mark all read
+                خواندن همه
               </button>
             )}
           </div>
 
           <ul className="max-h-80 overflow-y-auto">
             {isLoading && (
-              <li className="px-4 py-3 text-sm text-slate-500">Loading…</li>
+              <li className="px-4 py-3 text-sm text-brand-600">در حال بارگذاری…</li>
             )}
             {data?.items.length === 0 && (
-              <li className="px-4 py-3 text-sm text-slate-500">Nothing yet.</li>
+              <li className="px-4 py-3 text-sm text-brand-600">اعلانی وجود ندارد.</li>
             )}
             {data?.items.map((note) => (
               <li
                 key={note.id}
-                className={`border-b border-slate-50 px-4 py-3 text-sm last:border-0 ${
-                  note.isRead ? 'bg-white' : 'bg-slate-50'
+                className={`border-b border-brand-100 px-4 py-3 text-sm last:border-0 ${
+                  note.isRead ? 'bg-white' : 'bg-brand-50'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-medium text-slate-900">{note.title}</span>
+                  <span className="font-medium text-brand-800">{note.title}</span>
                   {!note.isRead && (
                     <button
                       type="button"
                       onClick={() => markRead.mutate(note.id)}
-                      className="whitespace-nowrap text-xs text-slate-500 hover:text-slate-900"
+                      className="whitespace-nowrap text-xs text-brand-600 hover:text-brand-800"
                     >
-                      Mark read
+                      خوانده شد
                     </button>
                   )}
                 </div>
-                <p className="mt-1 text-slate-600">{note.message}</p>
-                <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                <p className="mt-1 text-brand-700">{note.message}</p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-brand-500">
                   <span>{formatDate(note.createdAt)}</span>
                   {note.link && (
                     <Link
                       to={note.link}
                       onClick={() => setOpen(false)}
-                      className="text-slate-600 hover:text-slate-900"
+                      className="text-brand-600 hover:text-brand-800"
                     >
-                      View
+                      مشاهده
                     </Link>
                   )}
                 </div>

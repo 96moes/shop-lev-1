@@ -15,7 +15,12 @@ import {
   useAdminStats,
   useCategories,
 } from '../hooks/useShop'
-import { formatDate, formatPrice, formatStatus } from '../lib/format'
+import {
+  formatDate,
+  formatNumber,
+  formatPriceWithUnit,
+  formatStatus,
+} from '../lib/format'
 import { getErrorMessage } from '../services/apiClient'
 import type { OrderStatus } from '../types/api'
 
@@ -26,15 +31,17 @@ function RevenueChart({ data }: { data: { date: string; revenue: number }[] }) {
   const max = Math.max(...data.map((d) => d.revenue), 1)
 
   return (
-    <div className="flex h-40 items-end gap-1" role="img" aria-label="Revenue by day">
+    <div className="flex h-40 items-end gap-1" role="img" aria-label="درآمد روزانه">
       {data.map((day) => (
         <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
           <div
-            className="w-full rounded-t bg-slate-800"
+            className="w-full rounded-t bg-brand-600"
             style={{ height: `${Math.max(2, (day.revenue / max) * 100)}%` }}
-            title={`${day.date}: ${formatPrice(day.revenue)}`}
+            title={`${day.date}: ${formatPriceWithUnit(day.revenue)}`}
           />
-          <span className="text-[10px] text-slate-400">{day.date.slice(8)}</span>
+          <span className="text-[10px] text-brand-500">
+            {formatNumber(day.date.slice(8))}
+          </span>
         </div>
       ))}
     </div>
@@ -85,23 +92,23 @@ export default function AdminPage() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'products', label: 'Products' },
-    { id: 'orders', label: 'Orders' },
-    { id: 'coupons', label: 'Coupons' },
-    { id: 'customers', label: 'Customers' },
+    { id: 'overview', label: 'نمای کلی' },
+    { id: 'products', label: 'محصولات' },
+    { id: 'orders', label: 'سفارش‌ها' },
+    { id: 'coupons', label: 'کدهای تخفیف' },
+    { id: 'customers', label: 'مشتریان' },
   ]
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Admin dashboard</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Store performance, catalog and promotions.
+        <h1 className="text-2xl font-semibold text-brand-800">داشبورد مدیریت</h1>
+        <p className="mt-1 text-sm text-brand-700">
+          عملکرد فروشگاه، محصولات و تخفیف‌ها.
         </p>
       </div>
 
-      <nav className="flex gap-2 border-b border-slate-200">
+      <nav className="flex flex-wrap gap-2 border-b border-brand-100">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -109,8 +116,8 @@ export default function AdminPage() {
             onClick={() => setTab(t.id)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               tab === t.id
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-brand-700 text-brand-800'
+                : 'border-transparent text-brand-600 hover:text-brand-800'
             }`}
           >
             {t.label}
@@ -119,7 +126,10 @@ export default function AdminPage() {
       </nav>
 
       {notice && (
-        <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+        <p
+          role="status"
+          className="rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800"
+        >
           {notice}
         </p>
       )}
@@ -131,110 +141,118 @@ export default function AdminPage() {
 
       {tab === 'overview' && (
         <>
-          {stats.isLoading && <p className="text-sm text-slate-500">Loading stats…</p>}
+          {stats.isLoading && (
+            <p className="text-sm text-brand-600">در حال بارگذاری آمار…</p>
+          )}
           {stats.isError && (
-            <p className="text-sm text-red-600">Could not load dashboard figures.</p>
+            <p className="text-sm text-red-600">بارگذاری آمار داشبورد ممکن نشد.</p>
           )}
 
           {stats.data && (
             <>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  { label: 'Revenue', value: formatPrice(stats.data.totalRevenue) },
-                  { label: 'Orders', value: String(stats.data.totalOrders) },
-                  { label: 'Avg order', value: formatPrice(stats.data.averageOrderValue) },
-                  { label: 'Customers', value: String(stats.data.totalCustomers) },
-                  { label: 'Products', value: String(stats.data.totalProducts) },
-                  { label: 'Pending orders', value: String(stats.data.pendingOrders) },
+                  {
+                    label: 'درآمد کل',
+                    value: formatPriceWithUnit(stats.data.totalRevenue),
+                  },
+                  { label: 'تعداد سفارش‌ها', value: formatNumber(stats.data.totalOrders) },
+                  {
+                    label: 'میانگین سفارش',
+                    value: formatPriceWithUnit(stats.data.averageOrderValue),
+                  },
+                  { label: 'مشتریان', value: formatNumber(stats.data.totalCustomers) },
+                  { label: 'محصولات', value: formatNumber(stats.data.totalProducts) },
+                  {
+                    label: 'سفارش‌های در انتظار',
+                    value: formatNumber(stats.data.pendingOrders),
+                  },
                 ].map((card) => (
                   <div
                     key={card.label}
-                    className="rounded-lg border border-slate-200 bg-white p-4"
+                    className="rounded-lg border border-brand-100 bg-white p-4"
                   >
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      {card.label}
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-900">
-                      {card.value}
-                    </p>
+                    <p className="text-xs text-brand-600">{card.label}</p>
+                    <p className="mt-1 text-2xl font-bold text-brand-800">{card.value}</p>
                   </div>
                 ))}
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
-                <section className="rounded-lg border border-slate-200 bg-white p-6 lg:col-span-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                    Revenue, last 14 days
+                <section className="rounded-lg border border-brand-100 bg-white p-6 lg:col-span-2">
+                  <h2 className="text-sm font-semibold text-brand-600">
+                    درآمد ۱۴ روز گذشته
                   </h2>
                   <div className="mt-4">
                     <RevenueChart data={stats.data.salesByDay} />
                   </div>
                 </section>
 
-                <section className="rounded-lg border border-slate-200 bg-white p-6">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                    Orders by status
+                <section className="rounded-lg border border-brand-100 bg-white p-6">
+                  <h2 className="text-sm font-semibold text-brand-600">
+                    سفارش‌ها بر پایه وضعیت
                   </h2>
                   <ul className="mt-4 flex flex-col gap-2 text-sm">
                     {Object.entries(stats.data.ordersByStatus).map(([status, count]) => (
                       <li key={status} className="flex justify-between">
-                        <span className="capitalize text-slate-600">{status}</span>
-                        <span className="font-medium text-slate-900">{count}</span>
+                        <span className="text-brand-700">{formatStatus(status)}</span>
+                        <span className="font-medium text-brand-800">
+                          {formatNumber(count)}
+                        </span>
                       </li>
                     ))}
                     {Object.keys(stats.data.ordersByStatus).length === 0 && (
-                      <li className="text-slate-500">No orders yet.</li>
+                      <li className="text-brand-600">هنوز سفارشی ثبت نشده است.</li>
                     )}
                   </ul>
                 </section>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <section className="rounded-lg border border-slate-200 bg-white p-6">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                    Top products
+                <section className="rounded-lg border border-brand-100 bg-white p-6">
+                  <h2 className="text-sm font-semibold text-brand-600">
+                    پرفروش‌ترین محصولات
                   </h2>
                   <ul className="mt-4 flex flex-col gap-3 text-sm">
                     {stats.data.topProducts.map((p) => (
                       <li key={p.productId} className="flex justify-between gap-4">
                         <Link
                           to={`/products/${p.productId}`}
-                          className="text-slate-800 hover:underline"
+                          className="text-brand-700 hover:underline"
                         >
                           {p.name}
                         </Link>
-                        <span className="whitespace-nowrap text-slate-600">
-                          {p.unitsSold} sold · {formatPrice(p.revenue)}
+                        <span className="whitespace-nowrap text-brand-600">
+                          {formatNumber(p.unitsSold)} فروش ·{' '}
+                          {formatPriceWithUnit(p.revenue)}
                         </span>
                       </li>
                     ))}
                     {stats.data.topProducts.length === 0 && (
-                      <li className="text-slate-500">
-                        No paid orders yet, so nothing to rank.
+                      <li className="text-brand-600">
+                        هنوز سفارش پرداخت‌شده‌ای ثبت نشده است.
                       </li>
                     )}
                   </ul>
                 </section>
 
-                <section className="rounded-lg border border-slate-200 bg-white p-6">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                    Low stock
-                  </h2>
+                <section className="rounded-lg border border-brand-100 bg-white p-6">
+                  <h2 className="text-sm font-semibold text-brand-600">موجودی کم</h2>
                   <ul className="mt-4 flex flex-col gap-3 text-sm">
                     {stats.data.lowStock.map((p) => (
                       <li key={p.id} className="flex justify-between gap-4">
-                        <span className="text-slate-800">{p.name}</span>
+                        <span className="text-brand-700">{p.name}</span>
                         <span
                           className={`font-medium ${
                             p.stock === 0 ? 'text-red-600' : 'text-amber-600'
                           }`}
                         >
-                          {p.stock} left
+                          {formatNumber(p.stock)} باقی‌مانده
                         </span>
                       </li>
                     ))}
                     {stats.data.lowStock.length === 0 && (
-                      <li className="text-slate-500">All products are well stocked.</li>
+                      <li className="text-brand-600">موجودی همه محصولات مناسب است.</li>
                     )}
                   </ul>
                 </section>
@@ -246,10 +264,8 @@ export default function AdminPage() {
 
       {tab === 'products' && (
         <>
-          <section className="rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Add a product
-            </h2>
+          <section className="rounded-lg border border-brand-100 bg-white p-6">
+            <h2 className="text-sm font-semibold text-brand-600">افزودن محصول</h2>
             <form
               className="mt-4 grid gap-4 sm:grid-cols-2"
               onSubmit={(event) => {
@@ -264,12 +280,18 @@ export default function AdminPage() {
                       stock: newProduct.stock ? Number(newProduct.stock) : undefined,
                       categoryId: newProduct.categoryId || undefined,
                     }),
-                  `Created "${name}".`,
+                  `محصول «${name}» ساخته شد.`,
                 )
-                setNewProduct({ name: '', price: '', stock: '', categoryId: '', description: '' })
+                setNewProduct({
+                  name: '',
+                  price: '',
+                  stock: '',
+                  categoryId: '',
+                  description: '',
+                })
               }}
             >
-              <Field label="Name" htmlFor="p-name">
+              <Field label="نام محصول" htmlFor="p-name">
                 <input
                   id="p-name"
                   required
@@ -278,19 +300,19 @@ export default function AdminPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Price" htmlFor="p-price">
+              <Field label="قیمت (ریال)" htmlFor="p-price">
                 <input
                   id="p-price"
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
                   value={newProduct.price}
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   className={inputClass}
                 />
               </Field>
-              <Field label="Stock" htmlFor="p-stock">
+              <Field label="موجودی" htmlFor="p-stock">
                 <input
                   id="p-stock"
                   type="number"
@@ -300,14 +322,16 @@ export default function AdminPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Category" htmlFor="p-category">
+              <Field label="دسته‌بندی" htmlFor="p-category">
                 <select
                   id="p-category"
                   value={newProduct.categoryId}
-                  onChange={(e) => setNewProduct({ ...newProduct, categoryId: e.target.value })}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, categoryId: e.target.value })
+                  }
                   className={selectClass}
                 >
-                  <option value="">Uncategorised</option>
+                  <option value="">بدون دسته‌بندی</option>
                   {categories.data?.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -316,7 +340,7 @@ export default function AdminPage() {
                 </select>
               </Field>
               <div className="sm:col-span-2">
-                <Field label="Description" htmlFor="p-desc">
+                <Field label="توضیحات" htmlFor="p-desc">
                   <textarea
                     id="p-desc"
                     rows={2}
@@ -330,26 +354,26 @@ export default function AdminPage() {
               </div>
               <div className="sm:col-span-2">
                 <Button type="submit" disabled={productMutations.create.isPending}>
-                  {productMutations.create.isPending ? 'Creating…' : 'Create product'}
+                  {productMutations.create.isPending ? 'در حال ساخت…' : 'ساخت محصول'}
                 </Button>
               </div>
             </form>
           </section>
 
-          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <section className="overflow-x-auto rounded-lg border border-brand-100 bg-white">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-brand-50 text-right text-xs text-brand-600">
                 <tr>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 font-medium">محصول</th>
+                  <th className="px-4 py-3 font-medium">قیمت (ریال)</th>
+                  <th className="px-4 py-3 font-medium">موجودی</th>
+                  <th className="px-4 py-3 font-medium">وضعیت</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {products.data?.items.map((product) => (
-                  <tr key={product.id} className="border-t border-slate-100">
+                  <tr key={product.id} className="border-t border-brand-100">
                     <td className="px-4 py-3">
                       {product.isActive ? (
                         <Link to={`/products/${product.id}`} className="hover:underline">
@@ -363,17 +387,13 @@ export default function AdminPage() {
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         defaultValue={product.price}
-                        aria-label={`Price for ${product.name}`}
+                        aria-label={`قیمت ${product.name}`}
                         onBlur={(e) => {
                           const rawPrice = e.target.value.trim()
                           const price = Number(rawPrice)
-                          if (
-                            rawPrice === '' ||
-                            !Number.isFinite(price) ||
-                            price < 0
-                          ) {
+                          if (rawPrice === '' || !Number.isFinite(price) || price < 0) {
                             e.target.value = product.price
                           } else if (price !== Number(product.price)) {
                             report(
@@ -382,11 +402,11 @@ export default function AdminPage() {
                                   id: product.id,
                                   price,
                                 }),
-                              `Updated price for ${product.name}.`,
+                              `قیمت «${product.name}» به‌روزرسانی شد.`,
                             )
                           }
                         }}
-                        className="w-24 rounded border border-slate-300 px-2 py-1"
+                        className="w-28 rounded border border-brand-200 px-2 py-1"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -394,7 +414,7 @@ export default function AdminPage() {
                         type="number"
                         min="0"
                         defaultValue={product.stock}
-                        aria-label={`Stock for ${product.name}`}
+                        aria-label={`موجودی ${product.name}`}
                         onBlur={(e) => {
                           const stock = Number(e.target.value)
                           if (stock !== product.stock) {
@@ -404,11 +424,11 @@ export default function AdminPage() {
                                   id: product.id,
                                   stock,
                                 }),
-                              `Updated stock for ${product.name}.`,
+                              `موجودی «${product.name}» به‌روزرسانی شد.`,
                             )
                           }
                         }}
-                        className="w-20 rounded border border-slate-300 px-2 py-1"
+                        className="w-24 rounded border border-brand-200 px-2 py-1"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -421,38 +441,38 @@ export default function AdminPage() {
                                 id: product.id,
                                 isActive: !product.isActive,
                               }),
-                            `${product.isActive ? 'Deactivated' : 'Activated'} ${product.name}.`,
+                            `${product.isActive ? 'غیرفعال شد' : 'فعال شد'}: ${product.name}`,
                           )
                         }
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           product.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-200 text-slate-600'
+                            ? 'bg-brand-100 text-brand-800'
+                            : 'bg-brand-100 text-brand-600'
                         }`}
                       >
-                        {product.isActive ? 'Active' : 'Hidden'}
+                        {product.isActive ? 'فعال' : 'پنهان'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() =>
                           report(
                             () => productMutations.remove.mutateAsync(product.id),
-                            `Deleted ${product.name}.`,
+                            `محصول «${product.name}» حذف شد.`,
                           )
                         }
                       >
-                        Delete
+                        حذف
                       </Button>
                     </td>
                   </tr>
                 ))}
                 {products.data?.items.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                      No products yet.
+                    <td colSpan={5} className="px-4 py-6 text-center text-brand-600">
+                      هنوز محصولی ثبت نشده است.
                     </td>
                   </tr>
                 )}
@@ -460,8 +480,8 @@ export default function AdminPage() {
             </table>
             {products.data && products.data.totalPages > 1 && (
               <nav
-                aria-label="Product catalog pages"
-                className="flex items-center justify-center gap-3 border-t border-slate-100 p-4"
+                aria-label="صفحه‌بندی محصولات"
+                className="flex flex-wrap items-center justify-center gap-3 border-t border-brand-100 p-4"
               >
                 <Button
                   variant="secondary"
@@ -469,10 +489,11 @@ export default function AdminPage() {
                   disabled={productPage <= 1}
                   onClick={() => setProductPage((page) => page - 1)}
                 >
-                  Previous
+                  قبلی
                 </Button>
-                <span className="text-sm text-slate-600">
-                  Page {products.data.page} of {products.data.totalPages}
+                <span className="text-sm text-brand-700">
+                  صفحه {formatNumber(products.data.page)} از{' '}
+                  {formatNumber(products.data.totalPages)}
                 </span>
                 <Button
                   variant="secondary"
@@ -480,7 +501,7 @@ export default function AdminPage() {
                   disabled={productPage >= products.data.totalPages}
                   onClick={() => setProductPage((page) => page + 1)}
                 >
-                  Next
+                  بعدی
                 </Button>
               </nav>
             )}
@@ -490,10 +511,8 @@ export default function AdminPage() {
 
       {tab === 'coupons' && (
         <>
-          <section className="rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Create a coupon
-            </h2>
+          <section className="rounded-lg border border-brand-100 bg-white p-6">
+            <h2 className="text-sm font-semibold text-brand-600">ساخت کد تخفیف</h2>
             <form
               className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
               onSubmit={(event) => {
@@ -509,7 +528,7 @@ export default function AdminPage() {
                         ? Number(newCoupon.minOrderAmount)
                         : undefined,
                     }),
-                  `Created coupon ${code.toUpperCase()}.`,
+                  `کد تخفیف ${code.toUpperCase()} ساخته شد.`,
                 )
                 setNewCoupon({
                   code: '',
@@ -519,7 +538,7 @@ export default function AdminPage() {
                 })
               }}
             >
-              <Field label="Code" htmlFor="c-code">
+              <Field label="کد" htmlFor="c-code">
                 <input
                   id="c-code"
                   required
@@ -528,7 +547,7 @@ export default function AdminPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Type" htmlFor="c-type">
+              <Field label="نوع" htmlFor="c-type">
                 <select
                   id="c-type"
                   value={newCoupon.discountType}
@@ -537,16 +556,16 @@ export default function AdminPage() {
                   }
                   className={selectClass}
                 >
-                  <option value="percentage">Percentage</option>
-                  <option value="fixed">Fixed amount</option>
+                  <option value="percentage">درصدی</option>
+                  <option value="fixed">مبلغ ثابت (ریال)</option>
                 </select>
               </Field>
-              <Field label="Value" htmlFor="c-value">
+              <Field label="مقدار" htmlFor="c-value">
                 <input
                   id="c-value"
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
                   value={newCoupon.discountValue}
                   onChange={(e) =>
@@ -555,12 +574,12 @@ export default function AdminPage() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Min order" htmlFor="c-min">
+              <Field label="حداقل سفارش (ریال)" htmlFor="c-min">
                 <input
                   id="c-min"
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   value={newCoupon.minOrderAmount}
                   onChange={(e) =>
                     setNewCoupon({ ...newCoupon, minOrderAmount: e.target.value })
@@ -570,37 +589,40 @@ export default function AdminPage() {
               </Field>
               <div className="flex items-end">
                 <Button type="submit" disabled={couponMutations.create.isPending}>
-                  {couponMutations.create.isPending ? 'Creating…' : 'Create'}
+                  {couponMutations.create.isPending ? 'در حال ساخت…' : 'ساخت'}
                 </Button>
               </div>
             </form>
           </section>
 
-          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <section className="overflow-x-auto rounded-lg border border-brand-100 bg-white">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-brand-50 text-right text-xs text-brand-600">
                 <tr>
-                  <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Discount</th>
-                  <th className="px-4 py-3">Min order</th>
-                  <th className="px-4 py-3">Used</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 font-medium">کد</th>
+                  <th className="px-4 py-3 font-medium">تخفیف</th>
+                  <th className="px-4 py-3 font-medium">حداقل سفارش</th>
+                  <th className="px-4 py-3 font-medium">استفاده‌شده</th>
+                  <th className="px-4 py-3 font-medium">وضعیت</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {coupons.data?.map((coupon) => (
-                  <tr key={coupon.id} className="border-t border-slate-100">
+                  <tr key={coupon.id} className="border-t border-brand-100">
                     <td className="px-4 py-3 font-medium">{coupon.code}</td>
                     <td className="px-4 py-3">
                       {coupon.discountType === 'percentage'
-                        ? `${Number(coupon.discountValue)}%`
-                        : formatPrice(coupon.discountValue)}
+                        ? `${formatNumber(coupon.discountValue)}٪`
+                        : formatPriceWithUnit(coupon.discountValue)}
                     </td>
-                    <td className="px-4 py-3">{formatPrice(coupon.minOrderAmount)}</td>
                     <td className="px-4 py-3">
-                      {coupon.usedCount}
-                      {coupon.usageLimit !== null && ` / ${coupon.usageLimit}`}
+                      {formatPriceWithUnit(coupon.minOrderAmount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {formatNumber(coupon.usedCount)}
+                      {coupon.usageLimit !== null &&
+                        ` / ${formatNumber(coupon.usageLimit)}`}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -612,38 +634,38 @@ export default function AdminPage() {
                                 id: coupon.id,
                                 isActive: !coupon.isActive,
                               }),
-                            `${coupon.isActive ? 'Deactivated' : 'Activated'} ${coupon.code}.`,
+                            `${coupon.isActive ? 'غیرفعال شد' : 'فعال شد'}: ${coupon.code}`,
                           )
                         }
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           coupon.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-200 text-slate-600'
+                            ? 'bg-brand-100 text-brand-800'
+                            : 'bg-brand-100 text-brand-600'
                         }`}
                       >
-                        {coupon.isActive ? 'Active' : 'Inactive'}
+                        {coupon.isActive ? 'فعال' : 'غیرفعال'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() =>
                           report(
                             () => couponMutations.remove.mutateAsync(coupon.id),
-                            `Deleted ${coupon.code}.`,
+                            `کد تخفیف ${coupon.code} حذف شد.`,
                           )
                         }
                       >
-                        Delete
+                        حذف
                       </Button>
                     </td>
                   </tr>
                 ))}
                 {coupons.data?.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                      No coupons yet.
+                    <td colSpan={6} className="px-4 py-6 text-center text-brand-600">
+                      هنوز کد تخفیفی ساخته نشده است.
                     </td>
                   </tr>
                 )}
@@ -654,25 +676,25 @@ export default function AdminPage() {
       )}
 
       {tab === 'orders' && (
-        <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <section className="overflow-x-auto rounded-lg border border-brand-100 bg-white">
           {orders.isLoading && (
-            <p className="p-6 text-sm text-slate-500">Loading orders…</p>
+            <p className="p-6 text-sm text-brand-600">در حال بارگذاری سفارش‌ها…</p>
           )}
           {orders.isError && (
             <p role="alert" className="p-6 text-sm text-red-600">
-              Could not load orders.
+              بارگذاری سفارش‌ها ممکن نشد.
             </p>
           )}
           {orders.data && (
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-brand-50 text-right text-xs text-brand-600">
                 <tr>
-                  <th className="px-4 py-3">Order</th>
-                  <th className="px-4 py-3">Placed</th>
-                  <th className="px-4 py-3">Items</th>
-                  <th className="px-4 py-3">Total</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Update status</th>
+                  <th className="px-4 py-3 font-medium">سفارش</th>
+                  <th className="px-4 py-3 font-medium">تاریخ ثبت</th>
+                  <th className="px-4 py-3 font-medium">تعداد اقلام</th>
+                  <th className="px-4 py-3 font-medium">مبلغ کل</th>
+                  <th className="px-4 py-3 font-medium">وضعیت</th>
+                  <th className="px-4 py-3 font-medium">تغییر وضعیت</th>
                 </tr>
               </thead>
               <tbody>
@@ -691,18 +713,20 @@ export default function AdminPage() {
                             ? ['delivered']
                             : []
                   return (
-                    <tr key={order.id} className="border-t border-slate-100">
+                    <tr key={order.id} className="border-t border-brand-100">
                       <td className="px-4 py-3 font-medium">{order.orderNumber}</td>
                       <td className="px-4 py-3">{formatDate(order.createdAt)}</td>
                       <td className="px-4 py-3">
-                        {order.items.reduce((total, item) => total + item.quantity, 0)}
+                        {formatNumber(
+                          order.items.reduce((total, item) => total + item.quantity, 0),
+                        )}
                       </td>
-                      <td className="px-4 py-3">{formatPrice(order.total)}</td>
+                      <td className="px-4 py-3">{formatPriceWithUnit(order.total)}</td>
                       <td className="px-4 py-3">{formatStatus(order.status)}</td>
                       <td className="px-4 py-3">
                         {nextStatuses.length > 0 ? (
                           <select
-                            aria-label={`Update status for ${order.orderNumber}`}
+                            aria-label={`تغییر وضعیت سفارش ${order.orderNumber}`}
                             value=""
                             disabled={orderMutations.updateStatus.isPending}
                             onChange={(event) => {
@@ -716,13 +740,13 @@ export default function AdminPage() {
                                     id: order.id,
                                     status,
                                   }),
-                                `Updated ${order.orderNumber} to ${formatStatus(status)}.`,
+                                `وضعیت ${order.orderNumber} به ${formatStatus(status)} تغییر کرد.`,
                               )
                             }}
                             className={selectClass}
                           >
                             <option value="" disabled>
-                              Choose…
+                              انتخاب کنید…
                             </option>
                             {nextStatuses.map((status) => (
                               <option key={status} value={status}>
@@ -731,7 +755,7 @@ export default function AdminPage() {
                             ))}
                           </select>
                         ) : (
-                          <span className="text-slate-400">No action available</span>
+                          <span className="text-brand-500">اقدامی موجود نیست</span>
                         )}
                       </td>
                     </tr>
@@ -739,8 +763,8 @@ export default function AdminPage() {
                 })}
                 {orders.data.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                      No orders yet.
+                    <td colSpan={6} className="px-4 py-6 text-center text-brand-600">
+                      هنوز سفارشی ثبت نشده است.
                     </td>
                   </tr>
                 )}
@@ -751,33 +775,33 @@ export default function AdminPage() {
       )}
 
       {tab === 'customers' && (
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <section className="overflow-x-auto rounded-lg border border-brand-100 bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-brand-50 text-right text-xs text-brand-600">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Joined</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 font-medium">نام</th>
+                <th className="px-4 py-3 font-medium">ایمیل</th>
+                <th className="px-4 py-3 font-medium">تاریخ عضویت</th>
+                <th className="px-4 py-3 font-medium">وضعیت</th>
               </tr>
             </thead>
             <tbody>
               {customers.data?.map((customer) => (
-                <tr key={customer.id} className="border-t border-slate-100">
+                <tr key={customer.id} className="border-t border-brand-100">
                   <td className="px-4 py-3">
                     {customer.firstName} {customer.lastName}
                   </td>
                   <td className="px-4 py-3">{customer.email}</td>
                   <td className="px-4 py-3">{formatDate(customer.createdAt)}</td>
                   <td className="px-4 py-3">
-                    {customer.isActive ? 'Active' : 'Disabled'}
+                    {customer.isActive ? 'فعال' : 'غیرفعال'}
                   </td>
                 </tr>
               ))}
               {customers.data?.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
-                    No customers yet.
+                  <td colSpan={4} className="px-4 py-6 text-center text-brand-600">
+                    هنوز مشتری‌ای ثبت نشده است.
                   </td>
                 </tr>
               )}

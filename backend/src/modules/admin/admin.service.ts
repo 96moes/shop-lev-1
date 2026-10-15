@@ -11,6 +11,7 @@ import { NotificationType } from '../../database/entities/notification.entity.js
 import { Product } from '../../database/entities/product.entity.js';
 import { User, UserRole } from '../../database/entities/user.entity.js';
 import { PUBLIC_USER_SELECT } from '../../common/public-select.js';
+import { formatStatusLabel } from '../../common/order-status-labels.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { ProductsService, type PaginatedProducts } from '../products/products.service.js';
 import type { QueryProductsDto } from '../products/dto/query-products.dto.js';
@@ -281,7 +282,7 @@ export class AdminService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!current) {
-        throw new NotFoundException('Order not found');
+        throw new NotFoundException('سفارش یافت نشد');
       }
       current.items = await manager.find(OrderItem, {
         where: { orderId: current.id },
@@ -298,7 +299,7 @@ export class AdminService {
           dto.status === OrderStatus.DELIVERED);
       if (!allowedTransition) {
         throw new ConflictException(
-          `Cannot change order status from "${current.status}" to "${dto.status}"`,
+          `تغییر وضعیت سفارش از «${formatStatusLabel(current.status)}» به «${formatStatusLabel(dto.status)}» ممکن نیست`,
         );
       }
 
@@ -322,8 +323,8 @@ export class AdminService {
     await this.notifications.create({
       userId: order.userId,
       type: NotificationType.ORDER,
-      title: 'Order status updated',
-      message: `Your order ${order.orderNumber} is now ${dto.status}.`,
+      title: 'وضعیت سفارش تغییر کرد',
+      message: `وضعیت سفارش ${order.orderNumber} اکنون «${formatStatusLabel(dto.status)}» است.`,
       link: `/orders/${order.id}`,
       data: { orderId: order.id, status: dto.status },
     });

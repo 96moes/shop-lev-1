@@ -11,6 +11,6 @@ export enum AdminOrderStatus {
 
 export class UpdateAdminOrderStatusDto {
   @ApiProperty({ enum: AdminOrderStatus })
-  @IsEnum(AdminOrderStatus)
+  @IsEnum(AdminOrderStatus, { message: 'مقدار وارد‌شده معتبر نیست' })
   status: OrderStatus;
 }

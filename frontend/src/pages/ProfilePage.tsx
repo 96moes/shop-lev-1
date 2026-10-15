@@ -5,7 +5,7 @@ import { inputClass } from '../lib/formStyles'
 import { useAuth } from '../hooks/useAuth'
 import { authService } from '../services/authService'
 import { getErrorMessage } from '../services/apiClient'
-import { formatDate } from '../lib/format'
+import { formatDate, formatRole } from '../lib/format'
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth()
@@ -32,7 +32,7 @@ export default function ProfilePage() {
         phone: form.phone.trim() || undefined,
       })
       setUser(updated)
-      setSuccess('Profile updated')
+      setSuccess('اطلاعات حساب به‌روزرسانی شد')
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -45,36 +45,32 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Your profile</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Member since {formatDate(user.createdAt)}
+        <h1 className="text-2xl font-semibold text-brand-800">حساب کاربری شما</h1>
+        <p className="mt-1 text-sm text-brand-700">
+          عضو از {formatDate(user.createdAt)}
         </p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Account
-        </h2>
+      <section className="rounded-lg border border-brand-100 bg-white p-6">
+        <h2 className="text-sm font-semibold text-brand-600">اطلاعات حساب</h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-slate-500">Email</dt>
-            <dd className="text-sm text-slate-900">{user.email}</dd>
+            <dt className="text-xs text-brand-600">ایمیل</dt>
+            <dd className="text-sm text-brand-800">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">Role</dt>
-            <dd className="text-sm capitalize text-slate-900">{user.role}</dd>
+            <dt className="text-xs text-brand-600">نقش</dt>
+            <dd className="text-sm text-brand-800">{formatRole(user.role)}</dd>
           </div>
         </dl>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Details
-        </h2>
+      <section className="rounded-lg border border-brand-100 bg-white p-6">
+        <h2 className="text-sm font-semibold text-brand-600">ویرایش اطلاعات</h2>
 
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" htmlFor="firstName">
+            <Field label="نام" htmlFor="firstName">
               <input
                 id="firstName"
                 value={form.firstName}
@@ -85,7 +81,7 @@ export default function ProfilePage() {
               />
             </Field>
 
-            <Field label="Last name" htmlFor="lastName">
+            <Field label="نام خانوادگی" htmlFor="lastName">
               <input
                 id="lastName"
                 value={form.lastName}
@@ -97,7 +93,7 @@ export default function ProfilePage() {
             </Field>
           </div>
 
-          <Field label="Phone" htmlFor="phone" hint="Optional.">
+          <Field label="شماره تماس" htmlFor="phone" hint="اختیاری.">
             <input
               id="phone"
               value={form.phone}
@@ -114,14 +110,17 @@ export default function ProfilePage() {
             </p>
           )}
           {success && (
-            <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+            <p
+              role="status"
+              className="rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-800"
+            >
               {success}
             </p>
           )}
 
           <div>
             <Button type="submit" disabled={saving}>
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
             </Button>
           </div>
         </form>

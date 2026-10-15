@@ -7,6 +7,6 @@ export class QueryNotificationsDto {
   @IsOptional()
   // Query params arrive as strings; accept "true"/"1".
   @Transform(({ value }) => value === true || value === 'true' || value === '1')
-  @IsBoolean()
+  @IsBoolean({ message: 'فقط خوانده‌نشده‌ها باید درست یا غلط باشد' })
   unreadOnly?: boolean;
 }
